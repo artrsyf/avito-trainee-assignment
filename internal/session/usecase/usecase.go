@@ -14,8 +14,9 @@ import (
 type SessionUsecaseI interface {
 	Signup(authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
 	/*TODO Delete method*/
-	Create(authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
-	Check(userID uint) (*sessionEntity.Session, error)
+	// Create(authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
+	/*TODO Implement method*/
+	// Check(userID uint) (*sessionEntity.Session, error)
 }
 
 type SessionUsecase struct {

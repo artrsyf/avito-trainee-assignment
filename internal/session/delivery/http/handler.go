@@ -15,6 +15,12 @@ type SessionHandler struct {
 	sessionUC usecase.SessionUsecaseI
 }
 
+func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI) *SessionHandler {
+	return &SessionHandler{
+		sessionUC: sessionUsecase,
+	}
+}
+
 func (h *SessionHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
