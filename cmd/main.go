@@ -74,5 +74,6 @@ func main() {
 	router.Handle("/api/auth",
 		http.HandlerFunc(authHandler.Signup)).Methods("POST")
 
+	fmt.Println("server starts on :8080")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 8080), router))
 }
