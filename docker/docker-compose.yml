@@ -1,0 +1,51 @@
+version: '3.7'
+
+networks:
+  reward_service_network:
+
+services:
+  reward_service:
+    container_name: reward_service
+    env_file:
+      - ../cmd/.env
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    expose:
+      - 8080
+    depends_on:
+      - reward_service_postgres
+      - reward_service_redis
+    networks:
+      - reward_service_network
+  
+  reward_service_postgres:
+    container_name: reward_service_postgres
+    image: postgres:17-alpine
+    volumes:
+      - ../scripts/sql/:/docker-entrypoint-initdb.d/  
+      - reward_service_postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ../cmd/.env
+    ports:
+      - "5432:5432"
+    expose:
+      - 5432
+    networks:
+      - reward_service_network
+
+  reward_service_redis:
+    container_name: reward_service_redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
+    networks:
+      - reward_service_network
+
+volumes:
+  reward_service_postgres_data:
+    driver: "local"
