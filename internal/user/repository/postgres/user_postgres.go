@@ -29,7 +29,8 @@ func (repo *UserPostgresRepository) Create(user *entity.User) (*model.User, erro
 	}
 
 	createdUser := model.User{}
-	err = repo.DB.QueryRow("INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).Scan(&createdUser)
+	err = repo.DB.QueryRow("INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).
+		Scan(&createdUser.ID, &createdUser.Username, &createdUser.Coins, &createdUser.PasswordHash)
 	if err != nil {
 		return nil, err
 	}
