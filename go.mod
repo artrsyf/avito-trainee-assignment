@@ -7,3 +7,9 @@ require (
 	github.com/gomodule/redigo v1.9.2
 	golang.org/x/crypto v0.33.0
 )
+
+require (
+	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/lib/pq v1.10.9 // indirect
+)
