@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
@@ -33,8 +34,10 @@ func (repo *SessionRedisRepository) Create(sessionEntity *entity.Session) (*mode
 		return nil, err
 	}
 
+	ttlSeconds := int64(time.Until(sessionModel.RefreshExpiresAt).Seconds())
+
 	repo.mu.Lock()
-	result, err := redis.String(repo.redisConn.Do("SET", mkey, sessionSerialized, "EX", sessionModel.RefreshExpiresAt))
+	result, err := redis.String(repo.redisConn.Do("SET", mkey, sessionSerialized, "EX", ttlSeconds))
 	repo.mu.Unlock()
 
 	if err != nil {
