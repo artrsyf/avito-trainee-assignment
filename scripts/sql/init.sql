@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    coins INTEGER NOT NULL DEFAULT 0 CHECK (coins >= 0),
+    password_hash TEXT NOT NULL
+);
