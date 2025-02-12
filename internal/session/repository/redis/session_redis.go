@@ -34,7 +34,7 @@ func (repo *SessionRedisRepository) Create(sessionEntity *entity.Session) (*mode
 		return nil, err
 	}
 
-	ttlSeconds := int64(time.Until(sessionModel.RefreshExpiresAt).Seconds())
+	ttlSeconds := int64(time.Until(sessionModel.AccessExpiresAt).Seconds())
 
 	repo.mu.Lock()
 	result, err := redis.String(repo.redisConn.Do("SET", mkey, sessionSerialized, "EX", ttlSeconds))
