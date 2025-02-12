@@ -8,7 +8,12 @@ import (
 )
 
 type Config struct {
-	Auth AuthConfig `mapstructure:"auth"`
+	User UserConfig `mapstructure:"user"`
+}
+
+type UserConfig struct {
+	InitCoinsBalance uint       `mapstructure:"init_coins_balance"`
+	Auth             AuthConfig `mapstructure:"auth"`
 }
 
 type AuthConfig struct {

@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest) (*entity.User, error) {
+func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest, coinsBalance uint) (*entity.User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(authRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -15,7 +15,7 @@ func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest) (*entity.User, err
 
 	return &entity.User{
 		Username:     authRequest.Username,
-		Coins:        1000, /*TODO magic number*/
+		Coins:        coinsBalance, /*TODO magic number*/
 		PasswordHash: string(hashedPassword),
 	}, nil
 }

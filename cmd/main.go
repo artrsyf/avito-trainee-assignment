@@ -75,7 +75,7 @@ func main() {
 	sessionUC := sessionUsecase.NewSessionUsecase(
 		sessionRepo,
 		userRepo,
-		cfg.Auth,
+		cfg.User,
 	)
 
 	authHandler := sessionDelivery.NewSessionHandler(sessionUC)

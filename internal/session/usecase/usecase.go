@@ -22,14 +22,14 @@ type SessionUsecaseI interface {
 type SessionUsecase struct {
 	sessionRepo sessionRepo.SessionRepositoryI
 	userRepo    userRepo.UserRepositoryI
-	authConfig  config.AuthConfig
+	userConfig  config.UserConfig
 }
 
-func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, config config.AuthConfig) *SessionUsecase {
+func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, config config.UserConfig) *SessionUsecase {
 	return &SessionUsecase{
 		sessionRepo: sessionRepository,
 		userRepo:    userRepository,
-		authConfig:  config,
+		userConfig:  config,
 	}
 }
 
@@ -52,7 +52,7 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 		return session, nil
 	}
 
-	user, err := userDTO.AuthRequestToEntity(authRequest)
+	user, err := userDTO.AuthRequestToEntity(authRequest, uc.userConfig.InitCoinsBalance)
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +66,12 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 }
 
 func (uc *SessionUsecase) grantSession(userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
-	accessTokenExpiration, err := uc.authConfig.GetAccessTokenExpiration()
+	accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
 	if err != nil {
 		return nil, err
 	}
 
-	refreshTokenExpiration, err := uc.authConfig.GetRefreshTokenExpiration()
+	refreshTokenExpiration, err := uc.userConfig.Auth.GetRefreshTokenExpiration()
 	if err != nil {
 		return nil, err
 	}
