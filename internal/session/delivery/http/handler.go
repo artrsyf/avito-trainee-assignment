@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
@@ -21,7 +20,7 @@ func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI) *SessionHandler {
 	}
 }
 
-func (h *SessionHandler) Signup(w http.ResponseWriter, r *http.Request) {
+func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -34,7 +33,7 @@ func (h *SessionHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		/*Handle*/
 	}
 
-	createdSessionEntity, err := h.sessionUC.Signup(authRequest)
+	createdSessionEntity, err := h.sessionUC.LoginOrSignup(authRequest)
 	if err != nil {
 		/*Handle*/
 	}
@@ -42,24 +41,30 @@ func (h *SessionHandler) Signup(w http.ResponseWriter, r *http.Request) {
 	authResponse := dto.SessionEntityToResponse(createdSessionEntity)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:    "access_token",
-		Value:   createdSessionEntity.JWTAccess,
-		Path:    "/",
-		Expires: time.Now().Add(15 * time.Minute), /*TODO*/
-		Secure:  false,
+		Name:     "access_token",
+		Value:    createdSessionEntity.JWTAccess,
+		Path:     "/",
+		Expires:  createdSessionEntity.AccessExpiresAt, /*TODO*/
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name:    "refresh_token",
-		Value:   createdSessionEntity.JWTRefresh,
-		Path:    "/",
-		Expires: time.Now().Add(24 * time.Hour), /*TODO*/
-		Secure:  false,
+		Name:     "refresh_token",
+		Value:    createdSessionEntity.JWTRefresh,
+		Path:     "/",
+		Expires:  createdSessionEntity.RefreshExpiresAt, /*TODO*/
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name:   "user_id",
-		Value:  strconv.FormatUint(uint64(createdSessionEntity.UserID), 10),
-		Path:   "/",
-		Secure: false,
+		Name:     "user_id",
+		Value:    strconv.FormatUint(uint64(createdSessionEntity.UserID), 10),
+		Path:     "/",
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
 	})
 
 	response, err := json.Marshal(authResponse)
