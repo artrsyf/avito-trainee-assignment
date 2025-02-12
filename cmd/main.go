@@ -12,6 +12,8 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
+	"github.com/artrsyf/avito-trainee-assignment/config"
+
 	sessionRepository "github.com/artrsyf/avito-trainee-assignment/internal/session/repository/redis"
 	userRepository "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 
@@ -25,6 +27,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err) /*TODO*/
 	}
+
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(cfg)
 
 	postgresDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("POSTGRES_HOST"),
@@ -67,12 +75,13 @@ func main() {
 	sessionUC := sessionUsecase.NewSessionUsecase(
 		sessionRepo,
 		userRepo,
+		cfg.Auth,
 	)
 
 	authHandler := sessionDelivery.NewSessionHandler(sessionUC)
 
 	router.Handle("/api/auth",
-		http.HandlerFunc(authHandler.Signup)).Methods("POST")
+		http.HandlerFunc(authHandler.Auth)).Methods("POST")
 
 	fmt.Println("server starts on :8080")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 8080), router))

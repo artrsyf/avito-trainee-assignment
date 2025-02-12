@@ -24,6 +24,7 @@ RUN apk update --no-cache
 WORKDIR /reward-service/bin
 
 COPY --from=builder /build/cmd/.env .
+COPY --from=builder /build/config/config.yaml ../config/
 COPY --from=builder /build/bin/main .
 
 EXPOSE 8080
