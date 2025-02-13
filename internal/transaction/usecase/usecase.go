@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
 
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
@@ -65,7 +66,12 @@ func (uc *TransactionUsecase) Create(transactionEntity *entity.Transaction) erro
 		return err
 	}
 
-	_, err = uc.transactionRepo.Create(transactionEntity)
+	transactionModel := &model.Transaction{
+		SenderUserID:   senderUserModel.ID,
+		ReceiverUserID: receiverUserModel.ID,
+		Amount:         transactionEntity.Amount,
+	}
+	_, err = uc.transactionRepo.Create(transactionModel)
 	if err != nil {
 		uc.uow.Rollback()
 

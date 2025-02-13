@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
-    sender_username VARCHAR(255) NOT NULL,
-    receiver_username VARCHAR(255) NOT NULL,
+    sender_user_id INTEGER NOT NULL,
+    receiver_user_id INTEGER NOT NULL,
     amount INT NOT NULL CHECK (amount > 0)
+    FOREIGN KEY (sender_user_id) REFERENCES users (id) ON DELETE SET NULL
+    FOREIGN KEY (receiver_user_id) REFERENCES users (id) ON DELETE SET NULL
 );
