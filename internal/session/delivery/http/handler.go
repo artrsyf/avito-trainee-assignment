@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -25,17 +26,23 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err != nil {
 		/*Handle*/
+		fmt.Println(err)
+		return
 	}
 
 	authRequest := &dto.AuthRequest{}
 	err = json.Unmarshal(body, authRequest)
 	if err != nil {
 		/*Handle*/
+		fmt.Println(err)
+		return
 	}
 
 	createdSessionEntity, err := h.sessionUC.LoginOrSignup(authRequest)
 	if err != nil {
 		/*Handle*/
+		fmt.Println(err)
+		return
 	}
 
 	authResponse := dto.SessionEntityToResponse(createdSessionEntity)
@@ -70,6 +77,8 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(authResponse)
 	if err != nil {
 		/*Handle*/
+		fmt.Println(err)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
