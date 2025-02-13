@@ -6,8 +6,8 @@ type Purchase struct {
 }
 
 type PurchaseGroup struct {
-	PurchaseTypeName string
-	Quantity         uint
+	PurchaseTypeName string `json:"type"`
+	Quantity         uint   `json:"quantity"`
 }
 
 type Inventory []PurchaseGroup
