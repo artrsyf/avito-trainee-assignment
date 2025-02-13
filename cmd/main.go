@@ -15,17 +15,22 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/config"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
 
+	purchaseRepository "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository/postgres"
 	sessionRepository "github.com/artrsyf/avito-trainee-assignment/internal/session/repository/redis"
 	transactionRepository "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository/postgres"
 	userRepository "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 
 	uow "github.com/artrsyf/avito-trainee-assignment/internal/user/uow/postgres"
 
+	purchaseUsecase "github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	sessionUsecase "github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
 	transactionUsecase "github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
+	userUsecase "github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
 
+	purchaseDelivery "github.com/artrsyf/avito-trainee-assignment/internal/purchase/delivery/http"
 	sessionDelivery "github.com/artrsyf/avito-trainee-assignment/internal/session/delivery/http"
 	transactionDelivery "github.com/artrsyf/avito-trainee-assignment/internal/transaction/delivery/http"
+	userDelivery "github.com/artrsyf/avito-trainee-assignment/internal/user/delivery/http"
 )
 
 func main() {
@@ -77,8 +82,10 @@ func main() {
 	userRepo := userRepository.NewUserPostgresRepository(postgresConnect)
 	sessionRepo := sessionRepository.NewSessionRedisRepository(redisConn)
 	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect)
+	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect)
 
 	transactionUOW := uow.NewPostgresUnitOfWork(postgresConnect)
+	purchaseUOW := uow.NewPostgresUnitOfWork(postgresConnect)
 
 	sessionUC := sessionUsecase.NewSessionUsecase(
 		sessionRepo,
@@ -90,9 +97,21 @@ func main() {
 		userRepo,
 		transactionUOW,
 	)
+	purchaseUC := purchaseUsecase.NewTransactionUsecase(
+		purchaseRepo,
+		userRepo,
+		purchaseUOW,
+	)
+	userUC := userUsecase.NewUserUsecase(
+		purchaseRepo,
+		transactionRepo,
+		userRepo,
+	)
 
 	authHandler := sessionDelivery.NewSessionHandler(sessionUC)
 	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC)
+	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC)
+	userHandler := userDelivery.NewTransactionHandler(userUC)
 
 	router.Handle("/api/auth",
 		http.HandlerFunc(authHandler.Auth)).Methods("POST")
@@ -100,6 +119,14 @@ func main() {
 	router.Handle("/api/sendCoin",
 		middleware.ValidateJWTToken(
 			http.HandlerFunc(transactionHandler.SendCoins))).Methods("POST")
+
+	router.Handle("/api/buy/{item}",
+		middleware.ValidateJWTToken(
+			http.HandlerFunc(purchaseHandler.BuyItem))).Methods("GET")
+
+	router.Handle("/api/info",
+		middleware.ValidateJWTToken(
+			http.HandlerFunc(userHandler.GetInfo))).Methods("GET")
 
 	fmt.Println("server starts on :8080")
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 8080), router))
