@@ -53,12 +53,13 @@ func ValidateJWTToken(next http.Handler) http.Handler {
 
 		claimsUser := claims["user"].(map[string]interface{})
 		userIDString := claimsUser["id"].(string)
-		userID, err := strconv.Atoi(userIDString)
+		userID64, err := strconv.ParseUint(userIDString, 10, 32)
 		if err != nil {
 			fmt.Println("type cast error")
 			return
 		}
 
+		userID := uint(userID64)
 		username := claimsUser["username"].(string)
 
 		// _, err = sessionRepo.Check(userID) /*TODO MB*/
