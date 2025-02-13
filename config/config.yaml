@@ -5,5 +5,5 @@ server:
 user:
   init_coins_balance: 1000
   auth:
-    access_token_expiration: "2m"
+    access_token_expiration: "2h"
     refresh_token_expiration: "24h"

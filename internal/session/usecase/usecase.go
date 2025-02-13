@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
+	"golang.org/x/crypto/bcrypt"
 
 	sessionDTO "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
@@ -40,6 +41,10 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 	}
 
 	if userModel != nil {
+		if !checkPassword(authRequest.Password, userModel.PasswordHash) {
+			return nil, sessionEntity.ErrWrongCredentials
+		}
+
 		sessionModel, err := uc.sessionRepo.Check(userModel.ID)
 		if err == sessionEntity.ErrNoSession {
 			return uc.grantSession(userModel.ID, authRequest)
@@ -63,6 +68,10 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 	}
 
 	return uc.grantSession(createdUserModel.ID, authRequest)
+}
+
+func checkPassword(inputPassword, storedPasswordHash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(inputPassword)) == nil
 }
 
 func (uc *SessionUsecase) grantSession(userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
