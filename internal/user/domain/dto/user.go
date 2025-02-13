@@ -7,6 +7,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type SendCoinsRequest struct {
+	ReceiverUsername string `json:"toUser"`
+	Amount           uint   `json:"amount"`
+}
+
 func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest, coinsBalance uint) (*entity.User, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(authRequest.Password), bcrypt.DefaultCost)
 	if err != nil {

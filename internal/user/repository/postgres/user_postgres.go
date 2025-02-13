@@ -5,6 +5,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
+	"github.com/artrsyf/avito-trainee-assignment/internal/user/uow"
 )
 
 type UserPostgresRepository struct {
@@ -36,6 +37,15 @@ func (repo *UserPostgresRepository) Create(user *entity.User) (*model.User, erro
 	}
 
 	return &createdUser, nil
+}
+
+func (repo *UserPostgresRepository) Update(uow uow.UnitOfWorkI, user *model.User) error {
+	_, err := uow.Exec("UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo *UserPostgresRepository) GetById(id uint) (*model.User, error) {
