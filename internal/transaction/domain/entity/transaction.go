@@ -7,13 +7,13 @@ type Transaction struct {
 }
 
 type ReceivedTransactionGroup struct {
-	SenderUsername string
-	Amount         uint
+	SenderUsername string `json:"fromUser"`
+	Amount         uint   `json:"amount"`
 }
 
 type SentTransactionGroup struct {
-	ReceiverUsername string
-	Amount           uint
+	ReceiverUsername string `json:"toUser"`
+	Amount           uint   `json:"amount"`
 }
 
 type ReceivedHistory []ReceivedTransactionGroup
