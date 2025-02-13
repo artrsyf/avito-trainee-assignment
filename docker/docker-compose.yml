@@ -25,6 +25,7 @@ services:
     container_name: reward_service_postgres
     image: postgres:17-alpine
     volumes:
+      - ../postgres/custom_postgresql.conf:/etc/postgresql/postgresql.conf
       - ../scripts/sql/:/docker-entrypoint-initdb.d/  
       - reward_service_postgres_data:/var/lib/postgresql/data
     env_file:
@@ -35,6 +36,7 @@ services:
       - 5432
     networks:
       - reward_service_network
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
 
   pgadmin:
     container_name: pgadmin
