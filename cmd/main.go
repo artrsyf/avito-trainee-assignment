@@ -20,7 +20,7 @@ import (
 	transactionRepository "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository/postgres"
 	userRepository "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 
-	uow "github.com/artrsyf/avito-trainee-assignment/internal/user/uow/postgres"
+	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow/postgres"
 
 	purchaseUsecase "github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	sessionUsecase "github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"

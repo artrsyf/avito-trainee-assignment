@@ -8,7 +8,7 @@ import (
 
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/internal/user/uow"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchaseUsecaseI interface {

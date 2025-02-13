@@ -8,7 +8,7 @@ import (
 
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/internal/user/uow"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionUsecaseI interface {
