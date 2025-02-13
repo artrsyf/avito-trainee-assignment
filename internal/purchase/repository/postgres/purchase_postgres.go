@@ -48,3 +48,29 @@ func (repo *PurchasePostgresRepository) GetProductByType(purchaseTypeName string
 
 	return &purchaseType, nil
 }
+
+func (repo *PurchasePostgresRepository) GetPurchasesByUserId(userID uint) (entity.Inventory, error) {
+	rows, err := repo.DB.Query(`
+		SELECT pt.name, COUNT(p.id) as quantity
+		FROM purchases p
+		JOIN purchase_types pt ON p.purchase_type_id = pt.id
+		WHERE p.purchaser_id = $1
+		GROUP BY pt.name`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	inventory := entity.Inventory{}
+	for rows.Next() {
+		currentPurchaseGroup := entity.PurchaseGroup{}
+		err := rows.Scan(&currentPurchaseGroup.PurchaseTypeName, &currentPurchaseGroup.Quantity)
+		if err != nil {
+			return nil, err
+		}
+
+		inventory = append(inventory, currentPurchaseGroup)
+	}
+
+	return inventory, nil
+}
