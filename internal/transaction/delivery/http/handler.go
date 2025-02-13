@@ -1,10 +1,12 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
@@ -23,6 +25,9 @@ func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI) *Tran
 }
 
 func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -40,14 +45,14 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*TODO check senderUsername work*/
-	senderUsername := r.Context().Value(middleware.UsernameContextKey).(string)
+	senderUsername := ctx.Value(middleware.UsernameContextKey).(string)
 	transactionEntity := &entity.Transaction{
 		SenderUsername:   senderUsername,
 		ReceiverUsername: sendCoinsRequest.ReceiverUsername,
 		Amount:           sendCoinsRequest.Amount,
 	}
 
-	err = h.transactionUC.Create(transactionEntity)
+	err = h.transactionUC.Create(ctx, transactionEntity)
 	if err != nil {
 		/*Handle*/
 		fmt.Println(err)

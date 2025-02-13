@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
@@ -17,17 +18,17 @@ func NewPurchasePostgresRepository(db *sql.DB) *PurchasePostgresRepository {
 	}
 }
 
-func (repo *PurchasePostgresRepository) Create(purchase *entity.Purchase) (*model.Purchase, error) {
+func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *entity.Purchase) (*model.Purchase, error) {
 	createdPurchase := model.Purchase{}
 	var purchaseTypeID int
 
 	err := repo.DB.
-		QueryRow("SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&purchaseTypeID)
+		QueryRowContext(ctx, "SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&purchaseTypeID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = repo.DB.QueryRow("INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserId, purchaseTypeID).
+	err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserId, purchaseTypeID).
 		Scan(&createdPurchase.ID, &createdPurchase.PurchaserId, &createdPurchase.PurchaseTypeId)
 	if err != nil {
 		return nil, err
@@ -36,11 +37,11 @@ func (repo *PurchasePostgresRepository) Create(purchase *entity.Purchase) (*mode
 	return &createdPurchase, nil
 }
 
-func (repo *PurchasePostgresRepository) GetProductByType(purchaseTypeName string) (*model.PurchaseType, error) {
+func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, purchaseTypeName string) (*model.PurchaseType, error) {
 	purchaseType := model.PurchaseType{}
 
 	err := repo.DB.
-		QueryRow("SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
+		QueryRowContext(ctx, "SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
 		Scan(&purchaseType.ID, &purchaseType.Name, &purchaseType.Cost)
 	if err != nil {
 		return nil, err
@@ -49,8 +50,8 @@ func (repo *PurchasePostgresRepository) GetProductByType(purchaseTypeName string
 	return &purchaseType, nil
 }
 
-func (repo *PurchasePostgresRepository) GetPurchasesByUserId(userID uint) (entity.Inventory, error) {
-	rows, err := repo.DB.Query(`
+func (repo *PurchasePostgresRepository) GetPurchasesByUserId(ctx context.Context, userID uint) (entity.Inventory, error) {
+	rows, err := repo.DB.QueryContext(ctx, `
 		SELECT pt.name, COUNT(p.id) as quantity
 		FROM purchases p
 		JOIN purchase_types pt ON p.purchase_type_id = pt.id

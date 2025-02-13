@@ -1,11 +1,13 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
@@ -22,6 +24,9 @@ func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI) *SessionHandler {
 }
 
 func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -38,7 +43,7 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdSessionEntity, err := h.sessionUC.LoginOrSignup(authRequest)
+	createdSessionEntity, err := h.sessionUC.LoginOrSignup(ctx, authRequest)
 	if err != nil {
 		/*Handle*/
 		fmt.Println(err)

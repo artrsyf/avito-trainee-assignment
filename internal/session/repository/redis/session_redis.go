@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -25,7 +26,7 @@ func NewSessionRedisRepository(conn redis.Conn) *SessionRedisRepository {
 	}
 }
 
-func (repo *SessionRedisRepository) Create(sessionEntity *entity.Session) (*model.Session, error) {
+func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *entity.Session) (*model.Session, error) {
 	mkey := "sessions:" + strconv.FormatUint(uint64(sessionEntity.UserID), 10)
 
 	sessionModel := dto.SessionEntityToModel(sessionEntity)
@@ -37,7 +38,7 @@ func (repo *SessionRedisRepository) Create(sessionEntity *entity.Session) (*mode
 	ttlSeconds := int64(time.Until(sessionModel.AccessExpiresAt).Seconds())
 
 	repo.mu.Lock()
-	result, err := redis.String(repo.redisConn.Do("SET", mkey, sessionSerialized, "EX", ttlSeconds))
+	result, err := redis.String(redis.DoContext(repo.redisConn, ctx, "SET", mkey, sessionSerialized, "EX", ttlSeconds))
 	repo.mu.Unlock()
 
 	if err != nil {
@@ -51,11 +52,11 @@ func (repo *SessionRedisRepository) Create(sessionEntity *entity.Session) (*mode
 	return sessionModel, nil
 }
 
-func (repo *SessionRedisRepository) Check(userID uint) (*model.Session, error) {
+func (repo *SessionRedisRepository) Check(ctx context.Context, userID uint) (*model.Session, error) {
 	mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
 
 	repo.mu.Lock()
-	bytes, err := redis.Bytes(repo.redisConn.Do("GET", mkey))
+	bytes, err := redis.Bytes(redis.DoContext(repo.redisConn, ctx, "GET", mkey))
 	repo.mu.Unlock()
 
 	if err == redis.ErrNil {
@@ -73,22 +74,4 @@ func (repo *SessionRedisRepository) Check(userID uint) (*model.Session, error) {
 	}
 
 	return session, nil
-}
-
-func (sm *SessionRedisRepository) Delete(userID uint) error {
-	mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
-
-	sm.mu.Lock()
-	_, err := redis.Int(sm.redisConn.Do("DEL", mkey))
-	sm.mu.Unlock()
-
-	if err == redis.ErrNil {
-		return entity.ErrNoSession
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

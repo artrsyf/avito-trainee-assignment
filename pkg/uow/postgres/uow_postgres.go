@@ -31,6 +31,13 @@ func (u *PostgresUnitOfWork) Exec(query string, args ...any) (sql.Result, error)
 	return u.tx.Exec(query, args...)
 }
 
+func (u *PostgresUnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	if u.tx == nil {
+		return nil, fmt.Errorf("transaction has not been started")
+	}
+	return u.tx.ExecContext(ctx, query, args...)
+}
+
 func (u *PostgresUnitOfWork) Commit() error {
 	if u.tx == nil {
 		return fmt.Errorf("transaction has not been started")

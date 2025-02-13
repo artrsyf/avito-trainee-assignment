@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
@@ -17,9 +18,9 @@ func NewTransactionPostgresRepository(db *sql.DB) *TransactionPostgresRepository
 	}
 }
 
-func (repo *TransactionPostgresRepository) Create(transaction *model.Transaction) (*model.Transaction, error) {
+func (repo *TransactionPostgresRepository) Create(ctx context.Context, transaction *model.Transaction) (*model.Transaction, error) {
 	createdTransaction := model.Transaction{}
-	err := repo.DB.QueryRow("INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
+	err := repo.DB.QueryRowContext(ctx, "INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
 		Scan(&createdTransaction.ID, &createdTransaction.SenderUserID, &createdTransaction.ReceiverUserID, &createdTransaction.Amount)
 	if err != nil {
 		return nil, err
@@ -28,8 +29,8 @@ func (repo *TransactionPostgresRepository) Create(transaction *model.Transaction
 	return &createdTransaction, nil
 }
 
-func (repo *TransactionPostgresRepository) GetReceivedByUserID(userID uint) (entity.ReceivedHistory, error) {
-	rows, err := repo.DB.Query(`
+func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Context, userID uint) (entity.ReceivedHistory, error) {
+	rows, err := repo.DB.QueryContext(ctx, `
 		SELECT
 			u1.username, 
 			SUM(t.amount)
@@ -60,8 +61,8 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(userID uint) (ent
 	return receivedHistory, nil
 }
 
-func (repo *TransactionPostgresRepository) GetSentByUserID(userID uint) (entity.SentHistory, error) {
-	rows, err := repo.DB.Query(`
+func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, userID uint) (entity.SentHistory, error) {
+	rows, err := repo.DB.QueryContext(ctx, `
 		SELECT 
 			u1.username,
 			SUM(t.amount)

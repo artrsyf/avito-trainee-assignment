@@ -12,7 +12,7 @@ import (
 )
 
 type TransactionUsecaseI interface {
-	Create(transactionEntity *entity.Transaction) error
+	Create(ctx context.Context, transactionEntity *entity.Transaction) error
 }
 
 type TransactionUsecase struct {
@@ -29,13 +29,13 @@ func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepo
 	}
 }
 
-func (uc *TransactionUsecase) Create(transactionEntity *entity.Transaction) error {
-	senderUserModel, err := uc.userRepo.GetByUsername(transactionEntity.SenderUsername)
+func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *entity.Transaction) error {
+	senderUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.SenderUsername)
 	if err != nil {
 		return err
 	}
 
-	receiverUserModel, err := uc.userRepo.GetByUsername(transactionEntity.ReceiverUsername)
+	receiverUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.ReceiverUsername)
 	if err != nil {
 		return err
 	}
@@ -47,19 +47,19 @@ func (uc *TransactionUsecase) Create(transactionEntity *entity.Transaction) erro
 	senderUserModel.Coins -= transactionEntity.Amount
 	receiverUserModel.Coins += transactionEntity.Amount
 
-	err = uc.uow.Begin(context.Background())
+	err = uc.uow.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = uc.userRepo.Update(uc.uow, senderUserModel)
+	err = uc.userRepo.Update(ctx, uc.uow, senderUserModel)
 	if err != nil {
 		uc.uow.Rollback()
 
 		return err
 	}
 
-	err = uc.userRepo.Update(uc.uow, receiverUserModel)
+	err = uc.userRepo.Update(ctx, uc.uow, receiverUserModel)
 	if err != nil {
 		uc.uow.Rollback()
 
@@ -71,7 +71,7 @@ func (uc *TransactionUsecase) Create(transactionEntity *entity.Transaction) erro
 		ReceiverUserID: receiverUserModel.ID,
 		Amount:         transactionEntity.Amount,
 	}
-	_, err = uc.transactionRepo.Create(transactionModel)
+	_, err = uc.transactionRepo.Create(ctx, transactionModel)
 	if err != nil {
 		uc.uow.Rollback()
 

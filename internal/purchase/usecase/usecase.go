@@ -12,7 +12,7 @@ import (
 )
 
 type PurchaseUsecaseI interface {
-	Create(purchaseRequest *dto.PurchaseItemRequest) error
+	Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error
 }
 
 type PurchaseUsecase struct {
@@ -29,15 +29,15 @@ func NewTransactionUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, 
 	}
 }
 
-func (uc *PurchaseUsecase) Create(purchaseRequest *dto.PurchaseItemRequest) error {
+func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error {
 	purchaseEntity := dto.PurchaseItemRequestToEntity(purchaseRequest)
 
-	customerModel, err := uc.userRepo.GetById(purchaseEntity.PurchaserId)
+	customerModel, err := uc.userRepo.GetById(ctx, purchaseEntity.PurchaserId)
 	if err != nil {
 		return err
 	}
 
-	purchaseType, err := uc.purchaseRepo.GetProductByType(purchaseEntity.PurchaseTypeName)
+	purchaseType, err := uc.purchaseRepo.GetProductByType(ctx, purchaseEntity.PurchaseTypeName)
 	if err != nil {
 		return err
 	}
@@ -48,19 +48,19 @@ func (uc *PurchaseUsecase) Create(purchaseRequest *dto.PurchaseItemRequest) erro
 
 	customerModel.Coins -= purchaseType.Cost
 
-	err = uc.uow.Begin(context.Background())
+	err = uc.uow.Begin(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = uc.userRepo.Update(uc.uow, customerModel)
+	err = uc.userRepo.Update(ctx, uc.uow, customerModel)
 	if err != nil {
 		uc.uow.Rollback()
 
 		return err
 	}
 
-	_, err = uc.purchaseRepo.Create(purchaseEntity)
+	_, err = uc.purchaseRepo.Create(ctx, purchaseEntity)
 	if err != nil {
 		uc.uow.Rollback()
 

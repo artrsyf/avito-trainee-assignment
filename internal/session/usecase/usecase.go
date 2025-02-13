@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
@@ -15,7 +16,7 @@ import (
 )
 
 type SessionUsecaseI interface {
-	LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
+	LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
 	/*TODO Implement method*/
 	// Check(userID uint) (*sessionEntity.Session, error)
 }
@@ -34,8 +35,8 @@ func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRep
 	}
 }
 
-func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
-	userModel, err := uc.userRepo.GetByUsername(authRequest.Username)
+func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
+	userModel, err := uc.userRepo.GetByUsername(ctx, authRequest.Username)
 	if err != nil && err != userEntity.ErrIsNotExist {
 		return nil, err
 	}
@@ -45,9 +46,9 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 			return nil, sessionEntity.ErrWrongCredentials
 		}
 
-		sessionModel, err := uc.sessionRepo.Check(userModel.ID)
+		sessionModel, err := uc.sessionRepo.Check(ctx, userModel.ID)
 		if err == sessionEntity.ErrNoSession {
-			return uc.grantSession(userModel.ID, authRequest)
+			return uc.grantSession(ctx, userModel.ID, authRequest)
 		}
 		if err != nil {
 			return nil, err
@@ -62,19 +63,19 @@ func (uc *SessionUsecase) LoginOrSignup(authRequest *sessionDTO.AuthRequest) (*s
 		return nil, err
 	}
 
-	createdUserModel, err := uc.userRepo.Create(user)
+	createdUserModel, err := uc.userRepo.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return uc.grantSession(createdUserModel.ID, authRequest)
+	return uc.grantSession(ctx, createdUserModel.ID, authRequest)
 }
 
 func checkPassword(inputPassword, storedPasswordHash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(inputPassword)) == nil
 }
 
-func (uc *SessionUsecase) grantSession(userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
+func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
 	accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func (uc *SessionUsecase) grantSession(userID uint, authRequest *sessionDTO.Auth
 		return nil, err
 	}
 
-	createdSessionModel, err := uc.sessionRepo.Create(session)
+	createdSessionModel, err := uc.sessionRepo.Create(ctx, session)
 	if err != nil {
 		return nil, err
 	}

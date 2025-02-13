@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
@@ -18,9 +19,9 @@ func NewUserPostgresRepository(db *sql.DB) *UserPostgresRepository {
 	}
 }
 
-func (repo *UserPostgresRepository) Create(user *entity.User) (*model.User, error) {
+func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.User) (*model.User, error) {
 	err := repo.DB.
-		QueryRow("SELECT 1 FROM users WHERE username = $1", user.Username).Scan(new(int))
+		QueryRowContext(ctx, "SELECT 1 FROM users WHERE username = $1", user.Username).Scan(new(int))
 	if err == nil {
 		return nil, entity.ErrAlreadyCreated
 	}
@@ -30,7 +31,7 @@ func (repo *UserPostgresRepository) Create(user *entity.User) (*model.User, erro
 	}
 
 	createdUser := model.User{}
-	err = repo.DB.QueryRow("INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).
+	err = repo.DB.QueryRowContext(ctx, "INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).
 		Scan(&createdUser.ID, &createdUser.Username, &createdUser.Coins, &createdUser.PasswordHash)
 	if err != nil {
 		return nil, err
@@ -39,8 +40,8 @@ func (repo *UserPostgresRepository) Create(user *entity.User) (*model.User, erro
 	return &createdUser, nil
 }
 
-func (repo *UserPostgresRepository) Update(uow uow.UnitOfWorkI, user *model.User) error {
-	_, err := uow.Exec("UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
+func (repo *UserPostgresRepository) Update(ctx context.Context, uow uow.UnitOfWorkI, user *model.User) error {
+	_, err := uow.ExecContext(ctx, "UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
 	if err != nil {
 		return err
 	}
@@ -48,11 +49,11 @@ func (repo *UserPostgresRepository) Update(uow uow.UnitOfWorkI, user *model.User
 	return nil
 }
 
-func (repo *UserPostgresRepository) GetById(id uint) (*model.User, error) {
+func (repo *UserPostgresRepository) GetById(ctx context.Context, id uint) (*model.User, error) {
 	user := model.User{}
 
 	err := repo.DB.
-		QueryRow("SELECT id, username, coins, password_hash FROM users WHERE id = $1", id).
+		QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE id = $1", id).
 		Scan(&user.ID, &user.Username, &user.Coins, &user.PasswordHash)
 	if err == sql.ErrNoRows {
 		return nil, entity.ErrIsNotExist
@@ -63,11 +64,11 @@ func (repo *UserPostgresRepository) GetById(id uint) (*model.User, error) {
 	return &user, nil
 }
 
-func (repo *UserPostgresRepository) GetByUsername(username string) (*model.User, error) {
+func (repo *UserPostgresRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
 	user := model.User{}
 
 	err := repo.DB.
-		QueryRow("SELECT id, username, coins, password_hash FROM users WHERE username = $1", username).
+		QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE username = $1", username).
 		Scan(&user.ID, &user.Username, &user.Coins, &user.PasswordHash)
 	if err == sql.ErrNoRows {
 		return nil, entity.ErrIsNotExist

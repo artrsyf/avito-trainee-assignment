@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"context"
+
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/dto"
@@ -8,7 +10,7 @@ import (
 )
 
 type UserUsecaseI interface {
-	GetInfoById(userID uint) (*dto.GetInfoResponse, error)
+	GetInfoById(ctx context.Context, userID uint) (*dto.GetInfoResponse, error)
 }
 
 type UserUsecase struct {
@@ -25,23 +27,23 @@ func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transac
 	}
 }
 
-func (uc *UserUsecase) GetInfoById(userID uint) (*dto.GetInfoResponse, error) {
-	userInfo, err := uc.userRepo.GetById(userID)
+func (uc *UserUsecase) GetInfoById(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) {
+	userInfo, err := uc.userRepo.GetById(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	userInventory, err := uc.purchaseRepo.GetPurchasesByUserId(userID)
+	userInventory, err := uc.purchaseRepo.GetPurchasesByUserId(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	userSentTransactions, err := uc.transactionRepo.GetSentByUserID(userID)
+	userSentTransactions, err := uc.transactionRepo.GetSentByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	userReceivedTransactions, err := uc.transactionRepo.GetReceivedByUserID(userID)
+	userReceivedTransactions, err := uc.transactionRepo.GetReceivedByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
