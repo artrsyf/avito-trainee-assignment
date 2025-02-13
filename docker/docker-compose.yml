@@ -36,6 +36,18 @@ services:
     networks:
       - reward_service_network
 
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:9
+    env_file:
+      - ../cmd/.env
+    ports:
+      - "5050:80"
+    depends_on:
+      - reward_service_postgres
+    networks:
+      - reward_service_network
+
   reward_service_redis:
     container_name: reward_service_redis
     image: redis:7-alpine
