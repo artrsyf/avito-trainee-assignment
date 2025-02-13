@@ -5,24 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
-	"github.com/gomodule/redigo/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type SessionRedisRepository struct {
-	redisConn redis.Conn
-	mu        *sync.Mutex
+	client *redis.Client
 }
 
-func NewSessionRedisRepository(conn redis.Conn) *SessionRedisRepository {
+func NewSessionRedisRepository(client *redis.Client) *SessionRedisRepository {
 	return &SessionRedisRepository{
-		redisConn: conn,
-		mu:        &sync.Mutex{},
+		client: client,
 	}
 }
 
@@ -32,21 +29,20 @@ func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *e
 	sessionModel := dto.SessionEntityToModel(sessionEntity)
 	sessionSerialized, err := json.Marshal(sessionModel)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("marshal error: %w", err)
 	}
 
-	ttlSeconds := int64(time.Until(sessionModel.AccessExpiresAt).Seconds())
+	ttl := time.Until(sessionModel.AccessExpiresAt)
 
-	repo.mu.Lock()
-	result, err := redis.String(redis.DoContext(repo.redisConn, ctx, "SET", mkey, sessionSerialized, "EX", ttlSeconds))
-	repo.mu.Unlock()
+	err = repo.client.SetEx(
+		ctx,
+		mkey,
+		sessionSerialized,
+		ttl,
+	).Err()
 
 	if err != nil {
-		return nil, err
-	}
-
-	if result != "OK" {
-		return nil, fmt.Errorf("unexpected Redis response: %v", result)
+		return nil, fmt.Errorf("redis error: %w", err)
 	}
 
 	return sessionModel, nil
@@ -55,22 +51,17 @@ func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *e
 func (repo *SessionRedisRepository) Check(ctx context.Context, userID uint) (*model.Session, error) {
 	mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
 
-	repo.mu.Lock()
-	bytes, err := redis.Bytes(redis.DoContext(repo.redisConn, ctx, "GET", mkey))
-	repo.mu.Unlock()
-
-	if err == redis.ErrNil {
+	data, err := repo.client.Get(ctx, mkey).Bytes()
+	if err == redis.Nil {
 		return nil, entity.ErrNoSession
 	}
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("redis error: %w", err)
 	}
 
 	session := &model.Session{}
-	err = json.Unmarshal(bytes, session)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(data, session); err != nil {
+		return nil, fmt.Errorf("unmarshal error: %w", err)
 	}
 
 	return session, nil

@@ -6,11 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
@@ -57,22 +58,23 @@ func main() {
 		log.Fatalf("Ошибка при подключении к БД: %v", err)
 	}
 
-	redisURL := fmt.Sprintf("redis://user:@%s:%s/%s",
+	redisAddr := fmt.Sprintf("%s:%s",
 		os.Getenv("REDIS_HOST"),
 		os.Getenv("REDIS_PORT"),
-		os.Getenv("REDIS_DATABASE"),
 	)
-	redisConn, err := redis.DialURL(redisURL)
-	if err != nil {
-		panic(err)
-	}
+	redisDB, _ := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+		DB:   redisDB,
+	})
 
 	defer func() {
 		if err = postgresConnect.Close(); err != nil {
 			panic(err)
 		}
 
-		if err = redisConn.Close(); err != nil {
+		if err := redisClient.Close(); err != nil {
 			panic(err)
 		}
 	}()
@@ -80,7 +82,7 @@ func main() {
 	router := mux.NewRouter()
 
 	userRepo := userRepository.NewUserPostgresRepository(postgresConnect)
-	sessionRepo := sessionRepository.NewSessionRedisRepository(redisConn)
+	sessionRepo := sessionRepository.NewSessionRedisRepository(redisClient)
 	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect)
 	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect)
 
