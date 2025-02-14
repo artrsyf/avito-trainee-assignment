@@ -1,0 +1,85 @@
+run:
+  deadline: 5m
+  concurrency: 4
+  skip-dirs:
+    - .git
+    - vendor
+    - tests/mocks
+  skip-files:
+    - ".*_test\\.go"
+    - ".*\\.mock\\.go"
+    - ".*\\.pb\\.go"
+
+output:
+  format: colored-line-number
+  sort-results: true
+
+linters-settings:
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/golang/glog).*
+  gofmt:
+    simplify: true
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - fmt.Print.*
+  gocritic:
+    disabled-checks:
+      - hugeParam
+      - whyNoLint
+    enabled-tags:
+      - performance
+      - style
+
+linters:
+  enable:
+    - goconst
+    - gocyclo
+    - ineffassign
+    - nakedret
+    - prealloc
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - govet
+    - staticcheck
+    - gosimple
+    - unused
+    - typecheck
+    - errcheck
+    - bodyclose
+    - gocritic
+    - revive
+  disable:
+    - wsl
+    - funlen
+    - gochecknoglobals
+    - lll
+    - goimports
+    - gofmt
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+    - path: internal/mocks
+      linters:
+        - all
+    - text: "Error return value of .* is not checked"
+      linters:
+        - errcheck
+      source: "^//go:generate .* mockgen"
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+service:
+  golangci-lint-version: 1.54.2
