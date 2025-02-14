@@ -99,7 +99,7 @@ func main() {
 		userRepo,
 		transactionUOW,
 	)
-	purchaseUC := purchaseUsecase.NewTransactionUsecase(
+	purchaseUC := purchaseUsecase.NewPurchaseUsecase(
 		purchaseRepo,
 		userRepo,
 		purchaseUOW,

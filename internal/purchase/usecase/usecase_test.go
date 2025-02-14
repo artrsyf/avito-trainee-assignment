@@ -25,7 +25,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	mockUserRepo := mockUser.NewMockUserRepositoryI(ctrl)
 	mockUow := mock_uow.NewMockUnitOfWorkI(ctrl)
 
-	uc := NewTransactionUsecase(mockPurchaseRepo, mockUserRepo, mockUow)
+	uc := NewPurchaseUsecase(mockPurchaseRepo, mockUserRepo, mockUow)
 
 	ctx := context.Background()
 	testRequest := &dto.PurchaseItemRequest{

@@ -21,7 +21,7 @@ type PurchaseUsecase struct {
 	uow          uow.UnitOfWorkI
 }
 
-func NewTransactionUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uow.UnitOfWorkI) *PurchaseUsecase {
+func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uow.UnitOfWorkI) *PurchaseUsecase {
 	return &PurchaseUsecase{
 		purchaseRepo: purchaseRepository,
 		userRepo:     userRepository,
