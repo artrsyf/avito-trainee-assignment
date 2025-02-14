@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  reward_service_postgres_integration:
+    container_name: reward_service_postgres_integration
+    image: postgres:17-alpine
+    volumes:
+      - ../scripts/sql/:/docker-entrypoint-initdb.d/
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: reward_service_postgres_integration
+      POSTGRES_HOST: reward_service_postgres_integration
+      POSTGRES_PORT: 5432
+    ports:
+      - "5432:5432"
+    expose:
+      - 5432
+
+  reward_service_redis_integration:
+    container_name: reward_service_redis_integration
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
