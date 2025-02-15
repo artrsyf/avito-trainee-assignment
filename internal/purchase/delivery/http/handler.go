@@ -68,7 +68,9 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 		case entity.ErrNotEnoughBalance:
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
-
+		case entity.ErrNotExistedProduct:
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"errors": "item not found"})
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})

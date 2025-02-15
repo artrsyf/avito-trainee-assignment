@@ -131,7 +131,7 @@ func main() {
 	authHandler := sessionDelivery.NewSessionHandler(sessionUC, validator, logger)
 	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, validator, logger)
 	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, validator, logger)
-	userHandler := userDelivery.NewTransactionHandler(userUC, logger)
+	userHandler := userDelivery.NewUserHandler(userUC, logger)
 
 	router.Handle("/api/auth",
 		http.HandlerFunc(authHandler.Auth)).Methods("POST")

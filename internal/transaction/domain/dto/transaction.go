@@ -13,22 +13,27 @@ type SendCoinsRequest struct {
 
 func (req *SendCoinsRequest) ValidateSendCoinsRequest(validate *validator.Validate) error {
 	err := validate.Struct(req)
-
-	for _, err := range err.(validator.ValidationErrors) {
-		field := err.Field()
-		switch err.Tag() {
-		case "required":
-			return errors.New(field + " is required")
-		case "min":
-			return errors.New(field + " is too short")
-		case "max":
-			return errors.New(field + " is too long")
-		case "gt":
-			return errors.New(field + " must be greater than 0")
-		default:
-			return errors.New(field + " is invalid")
+	if err != nil {
+		// Преобразуем ошибку в тип validator.ValidationErrors
+		if validationErrs, ok := err.(validator.ValidationErrors); ok {
+			for _, err := range validationErrs {
+				field := err.Field()
+				switch err.Tag() {
+				case "required":
+					return errors.New(field + " is required")
+				case "min":
+					return errors.New(field + " is too short")
+				case "max":
+					return errors.New(field + " is too long")
+				case "gt":
+					return errors.New(field + " must be greater than 0")
+				default:
+					return errors.New(field + " is invalid")
+				}
+			}
 		}
-	}
 
+		return err
+	}
 	return nil
 }

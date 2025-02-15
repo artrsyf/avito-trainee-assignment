@@ -47,7 +47,7 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 
 	if userModel != nil {
 		if !checkPassword(authRequest.Password, userModel.PasswordHash) {
-			uc.logger.WithError(err).Error("Failed to authenticate user")
+			uc.logger.Error("Failed to authenticate user")
 			return nil, sessionEntity.ErrWrongCredentials
 		}
 

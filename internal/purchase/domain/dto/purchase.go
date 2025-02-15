@@ -8,23 +8,27 @@ import (
 )
 
 type PurchaseItemRequest struct {
-	PurchaseTypeName string `validate:"required"`
+	PurchaseTypeName string `validate:"required,min=1"`
 	UserID           uint   `validate:"required,gt=0"`
 }
 
 func (req *PurchaseItemRequest) ValidatePurchaseRequest(validate *validator.Validate) error {
 	err := validate.Struct(req)
-
-	for _, err := range err.(validator.ValidationErrors) {
-		field := err.Field()
-		switch err.Tag() {
-		case "required":
-			return errors.New(field + " is required")
-		case "gt":
-			return errors.New("something went wrong")
-		default:
-			return errors.New("something went wrong")
+	if err != nil {
+		if validationErrs, ok := err.(validator.ValidationErrors); ok {
+			for _, err := range validationErrs {
+				field := err.Field()
+				switch err.Tag() {
+				case "required":
+					return errors.New(field + " is required")
+				case "gt":
+					return errors.New(field + " must be greater than 0") // Сообщение на основе тега "gt"
+				default:
+					return errors.New(field + " is invalid") // Сообщение для других ошибок
+				}
+			}
 		}
+		return err
 	}
 	return nil
 }

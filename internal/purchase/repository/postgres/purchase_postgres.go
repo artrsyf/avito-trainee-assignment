@@ -27,6 +27,10 @@ func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *en
 
 	err := repo.DB.
 		QueryRowContext(ctx, "SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&purchaseTypeID)
+	if err == sql.ErrNoRows {
+		repo.logger.WithError(err).Error("Failed to select not existed product")
+		return nil, entity.ErrNotExistedProduct
+	}
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to select purchase type id")
 		return nil, err
@@ -48,6 +52,10 @@ func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, pu
 	err := repo.DB.
 		QueryRowContext(ctx, "SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
 		Scan(&purchaseType.ID, &purchaseType.Name, &purchaseType.Cost)
+	if err == sql.ErrNoRows {
+		repo.logger.WithError(err).Error("Failed to select not existed product")
+		return nil, entity.ErrNotExistedProduct
+	}
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to select product by type")
 		return nil, err

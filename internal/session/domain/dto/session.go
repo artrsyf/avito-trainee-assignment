@@ -23,21 +23,30 @@ type AuthResponse struct {
 
 func (req *AuthRequest) ValidateAuthRequest(validate *validator.Validate) error {
 	err := validate.Struct(req)
-
-	for _, err := range err.(validator.ValidationErrors) {
-		field := err.Field()
-		switch err.Tag() {
-		case "required":
-			return errors.New(field + " is required")
-		case "min":
-			return errors.New(field + " is too short")
-		case "max":
-			return errors.New(field + " is too long")
-		default:
-			return errors.New(field + " is invalid")
+	// Проверяем, если err не равна nil
+	if err != nil {
+		// Если err является типом validator.ValidationErrors, то обрабатываем ошибки
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// Проходим по ошибкам валидации
+			for _, err := range validationErrors {
+				field := err.Field()
+				switch err.Tag() {
+				case "required":
+					return errors.New(field + " is required")
+				case "min":
+					return errors.New(field + " is too short")
+				case "max":
+					return errors.New(field + " is too long")
+				default:
+					return errors.New(field + " is invalid")
+				}
+			}
 		}
+
+		return err
 	}
 
+	// Возвращаем nil, если валидация прошла успешно
 	return nil
 }
 

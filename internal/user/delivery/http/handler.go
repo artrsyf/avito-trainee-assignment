@@ -17,7 +17,7 @@ type UserHandler struct {
 	logger *logrus.Logger
 }
 
-func NewTransactionHandler(userUsecase usecase.UserUsecaseI, logger *logrus.Logger) *UserHandler {
+func NewUserHandler(userUsecase usecase.UserUsecaseI, logger *logrus.Logger) *UserHandler {
 	return &UserHandler{
 		userUC: userUsecase,
 		logger: logger,
