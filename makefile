@@ -38,6 +38,9 @@ e2e_test:
 	go test -v ./tests/e2e/
 	docker-compose -f $(COMPOSE_TEST_FILE) down --volumes --remove-orphans
 
+lint: 
+	golangci-lint run
+
 help:
 	@echo "Доступные команды:"
 
