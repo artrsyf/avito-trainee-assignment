@@ -11,7 +11,7 @@ import (
 )
 
 type UserUsecaseI interface {
-	GetInfoById(ctx context.Context, userID uint) (*dto.GetInfoResponse, error)
+	GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error)
 }
 
 type UserUsecase struct {
@@ -30,14 +30,14 @@ func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transac
 	}
 }
 
-func (uc *UserUsecase) GetInfoById(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) {
-	userInfo, err := uc.userRepo.GetById(ctx, userID)
+func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) {
+	userInfo, err := uc.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get user by id")
 		return nil, err
 	}
 
-	userInventory, err := uc.purchaseRepo.GetPurchasesByUserId(ctx, userID)
+	userInventory, err := uc.purchaseRepo.GetPurchasesByUserID(ctx, userID)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get user purchases by user id")
 		return nil, err

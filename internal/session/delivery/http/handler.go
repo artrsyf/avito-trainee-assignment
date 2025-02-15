@@ -13,21 +13,21 @@ import (
 	sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
-	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
+	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
 type SessionHandler struct {
 	sessionUC usecase.SessionUsecaseI
-	validator *validator.Validate
+	validate  *validator.Validate
 	logger    *logrus.Logger
 }
 
-func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, validator *validator.Validate, logger *logrus.Logger) *SessionHandler {
+func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, validate *validator.Validate, logger *logrus.Logger) *SessionHandler {
 	return &SessionHandler{
 		sessionUC: sessionUsecase,
-		validator: validator,
+		validate:  validate,
 		logger:    logger,
 	}
 }
@@ -41,7 +41,7 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to read request body")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": "bad request"},
@@ -49,14 +49,14 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
-		if err := r.Body.Close(); err != nil {
+		if err = r.Body.Close(); err != nil {
 			h.logger.WithError(err).Warn("Failed to close request body")
 		}
 	}()
 
 	authRequest := &dto.AuthRequest{}
 	if err = json.Unmarshal(body, authRequest); err != nil {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": "bad request"},
@@ -64,9 +64,9 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := authRequest.ValidateAuthRequest(h.validator); err != nil {
+	if err = authRequest.ValidateAuthRequest(h.validate); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for auth request")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": err.Error()},
@@ -83,19 +83,19 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case sessionEntity.ErrWrongCredentials:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusUnauthorized,
 				map[string]string{"errors": "wrong credentials"},
 			)
 		case userEntity.ErrAlreadyCreated:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusConflict,
 				map[string]string{"errors": "user conflict"},
 			)
 		default:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusInternalServerError,
 				map[string]string{"errors": "internal error"},
@@ -109,7 +109,7 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(dto.SessionEntityToResponse(createdSessionEntity))
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to marshal auth response")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},

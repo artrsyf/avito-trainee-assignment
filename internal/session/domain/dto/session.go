@@ -65,7 +65,7 @@ func createJWT(authRequest *AuthRequest, ttl time.Time, userID uint) (string, er
 	return tokenString, nil
 }
 
-func createSignedSession(authRequest *AuthRequest, userID uint, accessTokenTTL time.Time, refreshTokenTTL time.Time) (*entity.Session, error) {
+func createSignedSession(authRequest *AuthRequest, userID uint, accessTokenTTL, refreshTokenTTL time.Time) (*entity.Session, error) {
 	accessToken, err := createJWT(authRequest, accessTokenTTL, userID)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func SessionModelToEntity(sessionModel *model.Session) *entity.Session {
 	}
 }
 
-func AuthRequestToEntity(authRequest *AuthRequest, userID uint, accessTokenTTL time.Time, refreshTokenTTL time.Time) (*entity.Session, error) {
+func AuthRequestToEntity(authRequest *AuthRequest, userID uint, accessTokenTTL, refreshTokenTTL time.Time) (*entity.Session, error) {
 	signedSessionEntity, err := createSignedSession(authRequest, userID, accessTokenTTL, refreshTokenTTL)
 	if err != nil {
 		return nil, err

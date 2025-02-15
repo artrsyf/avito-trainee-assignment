@@ -36,7 +36,7 @@ func (req *PurchaseItemRequest) ValidatePurchaseRequest(validate *validator.Vali
 
 func PurchaseItemRequestToEntity(purchaseItemRequest *PurchaseItemRequest) *entity.Purchase {
 	return &entity.Purchase{
-		PurchaserId:      purchaseItemRequest.UserID,
+		PurchaserID:      purchaseItemRequest.UserID,
 		PurchaseTypeName: purchaseItemRequest.PurchaseTypeName,
 	}
 }

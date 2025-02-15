@@ -42,7 +42,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("successful purchase", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).DoAndReturn(
@@ -53,7 +53,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 				return nil
 			})
 		mockPurchaseRepo.EXPECT().Create(ctx, &entity.Purchase{
-			PurchaserId:      1,
+			PurchaserID:      1,
 			PurchaseTypeName: "premium",
 		}).Return(&purchaseModel.Purchase{ID: 1}, nil)
 		mockUow.EXPECT().Commit().Return(nil)
@@ -67,7 +67,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("insufficient balance", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 50}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 
 		err := uc.Create(ctx, testRequest)
@@ -77,7 +77,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	})
 
 	t.Run("user not found", func(t *testing.T) {
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(nil, errors.New("not found"))
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(nil, errors.New("not found"))
 
 		err := uc.Create(ctx, testRequest)
 		if err == nil {
@@ -88,7 +88,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("product not found", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(nil, errors.New("not found"))
 
 		err := uc.Create(ctx, testRequest)
@@ -100,7 +100,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("begin transaction error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 		mockUow.EXPECT().Begin(ctx).Return(errors.New("tx error"))
 
@@ -113,7 +113,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("user update error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(errors.New("update error"))
@@ -128,7 +128,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("purchase create error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(nil)
@@ -144,7 +144,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("commit error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
-		mockUserRepo.EXPECT().GetById(ctx, uint(1)).Return(user, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
 		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(nil)

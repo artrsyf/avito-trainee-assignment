@@ -128,7 +128,7 @@ func TestUserPostgresRepository_GetById(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id", "username", "coins", "password_hash"}).
 				AddRow(1, "testuser", 1000, "hash"))
 
-		user, err := repo.GetById(context.Background(), 1)
+		user, err := repo.GetByID(context.Background(), 1)
 
 		assert.NoError(t, err)
 		assert.Equal(t, &model.User{
@@ -144,7 +144,7 @@ func TestUserPostgresRepository_GetById(t *testing.T) {
 			WithArgs(2).
 			WillReturnError(sql.ErrNoRows)
 
-		_, err := repo.GetById(context.Background(), 2)
+		_, err := repo.GetByID(context.Background(), 2)
 
 		assert.Equal(t, entity.ErrIsNotExist, err)
 	})
@@ -155,7 +155,7 @@ func TestUserPostgresRepository_GetById(t *testing.T) {
 			WithArgs(3).
 			WillReturnError(expectedErr)
 
-		_, err := repo.GetById(context.Background(), 3)
+		_, err := repo.GetByID(context.Background(), 3)
 
 		assert.Equal(t, expectedErr, err)
 	})

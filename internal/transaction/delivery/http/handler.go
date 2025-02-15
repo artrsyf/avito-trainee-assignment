@@ -13,22 +13,22 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
-	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
+	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
 type TransactionHandler struct {
 	transactionUC usecase.TransactionUsecaseI
-	validator     *validator.Validate
+	validate      *validator.Validate
 	logger        *logrus.Logger
 }
 
-func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, validator *validator.Validate, logger *logrus.Logger) *TransactionHandler {
+func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, validate *validator.Validate, logger *logrus.Logger) *TransactionHandler {
 	return &TransactionHandler{
 		transactionUC: transactionUsecase,
 		logger:        logger,
-		validator:     validator,
+		validate:      validate,
 	}
 }
 
@@ -41,7 +41,7 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to read request body")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": "bad request"},
@@ -49,7 +49,7 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
-		if err := r.Body.Close(); err != nil {
+		if err = r.Body.Close(); err != nil {
 			h.logger.WithError(err).Warn("Failed to close request body")
 		}
 	}()
@@ -57,7 +57,7 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	sendCoinsRequest := &dto.SendCoinsRequest{}
 	err = json.Unmarshal(body, sendCoinsRequest)
 	if err != nil {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": "bad request"},
@@ -65,9 +65,9 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := sendCoinsRequest.ValidateSendCoinsRequest(h.validator); err != nil {
+	if err = sendCoinsRequest.ValidateSendCoinsRequest(h.validate); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for send coins request")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": err.Error()},
@@ -77,7 +77,7 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 
 	senderUsername, ok := ctx.Value(middleware.UsernameContextKey).(string)
 	if !ok {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},
@@ -86,7 +86,7 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if sendCoinsRequest.ReceiverUsername == senderUsername {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": "money transfer to yourself is not allowed"},
@@ -109,19 +109,19 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case transaction.ErrNotEnoughBalance:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusBadRequest,
 				map[string]string{"errors": "not enough balance"},
 			)
 		case userEntity.ErrIsNotExist:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusBadRequest,
 				map[string]string{"errors": "can't find such user"},
 			)
 		default:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusInternalServerError,
 				map[string]string{"errors": "internal error"},

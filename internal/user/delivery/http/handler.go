@@ -9,7 +9,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
-	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
+	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,7 +33,7 @@ func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 
 	senderUserID, ok := ctx.Value(middleware.UserIDContextKey).(uint)
 	if !ok {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},
@@ -41,14 +41,14 @@ func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getInfoResponse, err := h.userUC.GetInfoById(ctx, senderUserID)
+	getInfoResponse, err := h.userUC.GetInfoByID(ctx, senderUserID)
 	if err != nil {
 		h.logger.WithFields(logrus.Fields{
 			"error": err.Error(),
 			"stack": string(debug.Stack()),
 		}).Error("GetInfoById error handling")
 
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},
@@ -58,7 +58,7 @@ func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(getInfoResponse)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to marshal auth response")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},

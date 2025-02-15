@@ -1,7 +1,7 @@
 package entity
 
 type Purchase struct {
-	PurchaserId      uint
+	PurchaserID      uint
 	PurchaseTypeName string
 }
 

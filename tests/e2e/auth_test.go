@@ -336,8 +336,8 @@ func setupTestEnvironment() *TestConfig {
 	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB, logrus.New())
 	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB, logrus.New())
 
-	transactionUOW := uow.NewPostgresUnitOfWork(DB)
-	purchaseUOW := uow.NewPostgresUnitOfWork(DB)
+	transactionUOW := uow.NewSQLUnitOfWork(DB)
+	purchaseUOW := uow.NewSQLUnitOfWork(DB)
 
 	cfg := config.UserConfig{
 		InitCoinsBalance: 1000,

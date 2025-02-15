@@ -44,7 +44,7 @@ func initLogger() *logrus.Logger {
 
 func main() {
 	logger := initLogger()
-	validator := validator.New()
+	validate := validator.New()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -100,8 +100,8 @@ func main() {
 	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect, logger)
 	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect, logger)
 
-	transactionUOW := uow.NewPostgresUnitOfWork(postgresConnect)
-	purchaseUOW := uow.NewPostgresUnitOfWork(postgresConnect)
+	transactionUOW := uow.NewSQLUnitOfWork(postgresConnect)
+	purchaseUOW := uow.NewSQLUnitOfWork(postgresConnect)
 
 	sessionUC := sessionUsecase.NewSessionUsecase(
 		sessionRepo,
@@ -128,9 +128,9 @@ func main() {
 		logger,
 	)
 
-	authHandler := sessionDelivery.NewSessionHandler(sessionUC, validator, logger)
-	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, validator, logger)
-	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, validator, logger)
+	authHandler := sessionDelivery.NewSessionHandler(sessionUC, validate, logger)
+	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, validate, logger)
+	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, validate, logger)
 	userHandler := userDelivery.NewUserHandler(userUC, logger)
 
 	router.Handle("/api/auth",

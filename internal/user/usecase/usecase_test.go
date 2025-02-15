@@ -54,12 +54,12 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 		sent := &transactionEntity.SentHistory{sentTrancationGroup}
 		received := &transactionEntity.ReceivedHistory{receivedTrancationGroup}
 
-		mockUserRepo.EXPECT().GetById(ctx, userID).Return(user, nil)
-		mockPurchaseRepo.EXPECT().GetPurchasesByUserId(ctx, userID).Return(*inventory, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, userID).Return(user, nil)
+		mockPurchaseRepo.EXPECT().GetPurchasesByUserID(ctx, userID).Return(*inventory, nil)
 		mockTransactionRepo.EXPECT().GetSentByUserID(ctx, userID).Return(*sent, nil)
 		mockTransactionRepo.EXPECT().GetReceivedByUserID(ctx, userID).Return(*received, nil)
 
-		resp, err := uc.GetInfoById(ctx, userID)
+		resp, err := uc.GetInfoByID(ctx, userID)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -79,12 +79,12 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 	})
 
 	t.Run("user repo error", func(t *testing.T) {
-		mockUserRepo.EXPECT().GetById(ctx, userID).Return(nil, testError)
-		mockPurchaseRepo.EXPECT().GetPurchasesByUserId(gomock.Any(), gomock.Any()).Times(0)
+		mockUserRepo.EXPECT().GetByID(ctx, userID).Return(nil, testError)
+		mockPurchaseRepo.EXPECT().GetPurchasesByUserID(gomock.Any(), gomock.Any()).Times(0)
 		mockTransactionRepo.EXPECT().GetSentByUserID(gomock.Any(), gomock.Any()).Times(0)
 		mockTransactionRepo.EXPECT().GetReceivedByUserID(gomock.Any(), gomock.Any()).Times(0)
 
-		_, err := uc.GetInfoById(ctx, userID)
+		_, err := uc.GetInfoByID(ctx, userID)
 		if !errors.Is(err, testError) {
 			t.Errorf("expected error %v, got %v", testError, err)
 		}
@@ -93,12 +93,12 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 	t.Run("purchase repo error", func(t *testing.T) {
 		user := &model.User{Coins: 100}
 
-		mockUserRepo.EXPECT().GetById(ctx, userID).Return(user, nil)
-		mockPurchaseRepo.EXPECT().GetPurchasesByUserId(ctx, userID).Return(nil, testError)
+		mockUserRepo.EXPECT().GetByID(ctx, userID).Return(user, nil)
+		mockPurchaseRepo.EXPECT().GetPurchasesByUserID(ctx, userID).Return(nil, testError)
 		mockTransactionRepo.EXPECT().GetSentByUserID(gomock.Any(), gomock.Any()).Times(0)
 		mockTransactionRepo.EXPECT().GetReceivedByUserID(gomock.Any(), gomock.Any()).Times(0)
 
-		_, err := uc.GetInfoById(ctx, userID)
+		_, err := uc.GetInfoByID(ctx, userID)
 		if !errors.Is(err, testError) {
 			t.Errorf("expected error %v, got %v", testError, err)
 		}
@@ -108,12 +108,12 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 		user := &model.User{Coins: 100}
 		inventory := &purchaseEntity.Inventory{}
 
-		mockUserRepo.EXPECT().GetById(ctx, userID).Return(user, nil)
-		mockPurchaseRepo.EXPECT().GetPurchasesByUserId(ctx, userID).Return(*inventory, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, userID).Return(user, nil)
+		mockPurchaseRepo.EXPECT().GetPurchasesByUserID(ctx, userID).Return(*inventory, nil)
 		mockTransactionRepo.EXPECT().GetSentByUserID(ctx, userID).Return(nil, testError)
 		mockTransactionRepo.EXPECT().GetReceivedByUserID(gomock.Any(), gomock.Any()).Times(0)
 
-		_, err := uc.GetInfoById(ctx, userID)
+		_, err := uc.GetInfoByID(ctx, userID)
 		if !errors.Is(err, testError) {
 			t.Errorf("expected error %v, got %v", testError, err)
 		}
@@ -124,12 +124,12 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 		inventory := &purchaseEntity.Inventory{}
 		sent := &transactionEntity.SentHistory{}
 
-		mockUserRepo.EXPECT().GetById(ctx, userID).Return(user, nil)
-		mockPurchaseRepo.EXPECT().GetPurchasesByUserId(ctx, userID).Return(*inventory, nil)
+		mockUserRepo.EXPECT().GetByID(ctx, userID).Return(user, nil)
+		mockPurchaseRepo.EXPECT().GetPurchasesByUserID(ctx, userID).Return(*inventory, nil)
 		mockTransactionRepo.EXPECT().GetSentByUserID(ctx, userID).Return(*sent, nil)
 		mockTransactionRepo.EXPECT().GetReceivedByUserID(ctx, userID).Return(nil, testError)
 
-		_, err := uc.GetInfoById(ctx, userID)
+		_, err := uc.GetInfoByID(ctx, userID)
 		if !errors.Is(err, testError) {
 			t.Errorf("expected error %v, got %v", testError, err)
 		}

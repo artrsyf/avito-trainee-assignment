@@ -9,7 +9,7 @@ import (
 
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchaseUsecaseI interface {
@@ -19,11 +19,11 @@ type PurchaseUsecaseI interface {
 type PurchaseUsecase struct {
 	purchaseRepo purchaseRepo.PurchaseRepositoryI
 	userRepo     userRepo.UserRepositoryI
-	uow          uow.UnitOfWorkI
+	uow          uowI.UnitOfWorkI
 	logger       *logrus.Logger
 }
 
-func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uow.UnitOfWorkI, logger *logrus.Logger) *PurchaseUsecase {
+func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *PurchaseUsecase {
 	return &PurchaseUsecase{
 		purchaseRepo: purchaseRepository,
 		userRepo:     userRepository,
@@ -35,7 +35,7 @@ func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, use
 func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error {
 	purchaseEntity := dto.PurchaseItemRequestToEntity(purchaseRequest)
 
-	customerModel, err := uc.userRepo.GetById(ctx, purchaseEntity.PurchaserId)
+	customerModel, err := uc.userRepo.GetByID(ctx, purchaseEntity.PurchaserID)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get customer user by id")
 		return err
@@ -62,14 +62,20 @@ func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.Purc
 
 	err = uc.userRepo.Update(ctx, uc.uow, customerModel)
 	if err != nil {
-		uc.uow.Rollback()
+		rbErr := uc.uow.Rollback()
+		if rbErr != nil {
+			uc.logger.WithError(rbErr).Error("Rollback error encountered")
+		}
 		uc.logger.WithError(err).Error("Rollback money transfer due user updating")
 		return err
 	}
 
 	purchaseModel, err := uc.purchaseRepo.Create(ctx, purchaseEntity)
 	if err != nil {
-		uc.uow.Rollback()
+		rbErr := uc.uow.Rollback()
+		if rbErr != nil {
+			uc.logger.WithError(rbErr).Error("Rollback error encountered")
+		}
 		uc.logger.WithError(err).Error("Rollback money transfer due purchase creating")
 		return err
 	}
@@ -81,8 +87,8 @@ func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.Purc
 	}
 
 	uc.logger.WithFields(logrus.Fields{
-		"customer_id":     purchaseModel.PurchaserId,
-		"product_type_id": purchaseModel.PurchaseTypeId,
+		"customer_id":     purchaseModel.PurchaserID,
+		"product_type_id": purchaseModel.PurchaseTypeID,
 	}).Info("Successfully purchase product")
 
 	return nil

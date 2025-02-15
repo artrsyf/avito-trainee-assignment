@@ -6,7 +6,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 	"github.com/sirupsen/logrus"
 )
 
@@ -50,7 +50,7 @@ func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.Use
 	return &createdUser, nil
 }
 
-func (repo *UserPostgresRepository) Update(ctx context.Context, uow uow.UnitOfWorkI, user *model.User) error {
+func (repo *UserPostgresRepository) Update(ctx context.Context, uow uowI.UnitOfWorkI, user *model.User) error {
 	_, err := uow.ExecContext(ctx, "UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to update user")
@@ -64,7 +64,7 @@ func (repo *UserPostgresRepository) Update(ctx context.Context, uow uow.UnitOfWo
 	return nil
 }
 
-func (repo *UserPostgresRepository) GetById(ctx context.Context, id uint) (*model.User, error) {
+func (repo *UserPostgresRepository) GetByID(ctx context.Context, id uint) (*model.User, error) {
 	user := model.User{}
 
 	err := repo.DB.

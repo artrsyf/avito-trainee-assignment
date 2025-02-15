@@ -9,7 +9,7 @@ import (
 
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionUsecaseI interface {
@@ -19,11 +19,11 @@ type TransactionUsecaseI interface {
 type TransactionUsecase struct {
 	transactionRepo transactionRepo.TransactionRepositoryI
 	userRepo        userRepo.UserRepositoryI
-	uow             uow.UnitOfWorkI
+	uow             uowI.UnitOfWorkI
 	logger          *logrus.Logger
 }
 
-func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, uow uow.UnitOfWorkI, logger *logrus.Logger) *TransactionUsecase {
+func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *TransactionUsecase {
 	return &TransactionUsecase{
 		transactionRepo: transactionRepository,
 		userRepo:        userRepository,
@@ -61,14 +61,20 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
 
 	err = uc.userRepo.Update(ctx, uc.uow, senderUserModel)
 	if err != nil {
-		uc.uow.Rollback()
+		rbErr := uc.uow.Rollback()
+		if rbErr != nil {
+			uc.logger.WithError(rbErr).Error("Rollback error encountered")
+		}
 		uc.logger.WithError(err).Error("Rollback money transfer due user updating")
 		return err
 	}
 
 	err = uc.userRepo.Update(ctx, uc.uow, receiverUserModel)
 	if err != nil {
-		uc.uow.Rollback()
+		rbErr := uc.uow.Rollback()
+		if rbErr != nil {
+			uc.logger.WithError(rbErr).Error("Rollback error encountered")
+		}
 		uc.logger.WithError(err).Error("Rollback money transfer due user updating")
 		return err
 	}
@@ -80,7 +86,10 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
 	}
 	_, err = uc.transactionRepo.Create(ctx, transactionModel)
 	if err != nil {
-		uc.uow.Rollback()
+		rbErr := uc.uow.Rollback()
+		if rbErr != nil {
+			uc.logger.WithError(rbErr).Error("Rollback error encountered")
+		}
 		uc.logger.WithError(err).Error("Rollback money transfer due transaction creating")
 		return err
 	}

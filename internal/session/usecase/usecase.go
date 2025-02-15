@@ -27,11 +27,11 @@ type SessionUsecase struct {
 	logger      *logrus.Logger
 }
 
-func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, config config.UserConfig, logger *logrus.Logger) *SessionUsecase {
+func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, cfg config.UserConfig, logger *logrus.Logger) *SessionUsecase {
 	return &SessionUsecase{
 		sessionRepo: sessionRepository,
 		userRepo:    userRepository,
-		userConfig:  config,
+		userConfig:  cfg,
 		logger:      logger,
 	}
 }
@@ -49,11 +49,11 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 			return nil, sessionEntity.ErrWrongCredentials
 		}
 
-		sessionModel, err := uc.sessionRepo.Check(ctx, userModel.ID)
-		if err == sessionEntity.ErrNoSession {
+		sessionModel, checkErr := uc.sessionRepo.Check(ctx, userModel.ID)
+		if checkErr == sessionEntity.ErrNoSession {
 			return uc.grantSession(ctx, userModel.ID, authRequest)
 		}
-		if err != nil {
+		if checkErr != nil {
 			uc.logger.WithError(err).Error("An error occured due checking user session")
 			return nil, err
 		}

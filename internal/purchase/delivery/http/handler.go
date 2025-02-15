@@ -10,7 +10,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
-	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
+	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -18,14 +18,14 @@ import (
 
 type PurchaseHandler struct {
 	purchaseUC usecase.PurchaseUsecaseI
-	validator  *validator.Validate
+	validate   *validator.Validate
 	logger     *logrus.Logger
 }
 
-func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, validator *validator.Validate, logger *logrus.Logger) *PurchaseHandler {
+func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, validate *validator.Validate, logger *logrus.Logger) *PurchaseHandler {
 	return &PurchaseHandler{
 		purchaseUC: purchaseUsecase,
-		validator:  validator,
+		validate:   validate,
 		logger:     logger,
 	}
 }
@@ -41,7 +41,7 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 
 	customerUserID, ok := ctx.Value(middleware.UserIDContextKey).(uint)
 	if !ok {
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusInternalServerError,
 			map[string]string{"errors": "internal error"},
@@ -53,9 +53,9 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 		PurchaseTypeName: purchaseTypeName,
 		UserID:           customerUserID,
 	}
-	if err := purchaseItemRequest.ValidatePurchaseRequest(h.validator); err != nil {
+	if err := purchaseItemRequest.ValidatePurchaseRequest(h.validate); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for purchase request")
-		jsonresponse.JsonResponse(
+		JSONResponse.JSONResponse(
 			w,
 			http.StatusBadRequest,
 			map[string]string{"errors": err.Error()},
@@ -72,19 +72,19 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case entity.ErrNotEnoughBalance:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusBadRequest,
 				map[string]string{"errors": "not enough balance"},
 			)
 		case entity.ErrNotExistedProduct:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusNotFound,
 				map[string]string{"errors": "item not found"},
 			)
 		default:
-			jsonresponse.JsonResponse(
+			JSONResponse.JSONResponse(
 				w,
 				http.StatusInternalServerError,
 				map[string]string{"errors": "internal error"},

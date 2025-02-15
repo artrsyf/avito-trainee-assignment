@@ -28,7 +28,7 @@ func TestUserUsecase_Integration(t *testing.T) {
 	t.Run("get user info with empty history", func(t *testing.T) {
 		userID := CreateTestUser(t, "user1", 1000)
 
-		info, err := uc.GetInfoById(ctx, userID)
+		info, err := uc.GetInfoByID(ctx, userID)
 		require.NoError(t, err)
 
 		require.Equal(t, uint(1000), info.Coins)
@@ -46,7 +46,7 @@ func TestUserUsecase_Integration(t *testing.T) {
 		createPurchase(t, userID, "item1")
 		createPurchase(t, userID, "item2")
 
-		info, err := uc.GetInfoById(ctx, userID)
+		info, err := uc.GetInfoByID(ctx, userID)
 		require.NoError(t, err)
 
 		require.Len(t, info.Inventory, 2)
@@ -63,14 +63,14 @@ func TestUserUsecase_Integration(t *testing.T) {
 		createTransaction(t, senderID, receiver1ID, 200)
 		createTransaction(t, senderID, receiver2ID, 300)
 
-		senderInfo, err := uc.GetInfoById(ctx, senderID)
+		senderInfo, err := uc.GetInfoByID(ctx, senderID)
 		require.NoError(t, err)
 
 		require.Len(t, senderInfo.CoinHistory.SentHistory, 2)
 		require.Equal(t, uint(300), findSentAmount(senderInfo.CoinHistory.SentHistory, "receiver1"))
 		require.Equal(t, uint(300), findSentAmount(senderInfo.CoinHistory.SentHistory, "receiver2"))
 
-		receiverInfo, err := uc.GetInfoById(ctx, receiver1ID)
+		receiverInfo, err := uc.GetInfoByID(ctx, receiver1ID)
 		require.NoError(t, err)
 
 		require.Len(t, receiverInfo.CoinHistory.ReceivedHistory, 1)
@@ -78,7 +78,7 @@ func TestUserUsecase_Integration(t *testing.T) {
 	})
 
 	t.Run("user not found", func(t *testing.T) {
-		_, err := uc.GetInfoById(ctx, 9999)
+		_, err := uc.GetInfoByID(ctx, 9999)
 		require.Error(t, err)
 		require.Equal(t, err, userEntity.ErrIsNotExist)
 	})

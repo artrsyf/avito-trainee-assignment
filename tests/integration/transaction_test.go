@@ -19,7 +19,7 @@ import (
 func TestTransactionUsecase_Integration(t *testing.T) {
 	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
 	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB, logrus.New())
-	uow := uow.NewPostgresUnitOfWork(DB)
+	uow := uow.NewSQLUnitOfWork(DB)
 
 	uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow, logrus.New())
 	ctx := context.Background()

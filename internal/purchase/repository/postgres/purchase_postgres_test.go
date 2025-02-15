@@ -32,15 +32,15 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 				AddRow(1, 1, 1))
 
 		purchase, err := repo.Create(context.Background(), &entity.Purchase{
-			PurchaserId:      1,
+			PurchaserID:      1,
 			PurchaseTypeName: "t-shirt",
 		})
 
 		assert.NoError(t, err)
 		assert.Equal(t, &model.Purchase{
 			ID:             1,
-			PurchaserId:    1,
-			PurchaseTypeId: 1,
+			PurchaserID:    1,
+			PurchaseTypeID: 1,
 		}, purchase)
 	})
 
@@ -50,7 +50,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			WillReturnError(sql.ErrNoRows)
 
 		_, err := repo.Create(context.Background(), &entity.Purchase{
-			PurchaserId:      1,
+			PurchaserID:      1,
 			PurchaseTypeName: "invalid-type",
 		})
 
@@ -68,7 +68,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			WillReturnError(expectedErr)
 
 		_, err := repo.Create(context.Background(), &entity.Purchase{
-			PurchaserId:      1,
+			PurchaserID:      1,
 			PurchaseTypeName: "t-shirt",
 		})
 
@@ -142,7 +142,7 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 			WithArgs(userID).
 			WillReturnRows(rows)
 
-		result, err := repo.GetPurchasesByUserId(context.Background(), userID)
+		result, err := repo.GetPurchasesByUserID(context.Background(), userID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, entity.Inventory{
@@ -158,7 +158,7 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 			WithArgs(userID).
 			WillReturnRows(rows)
 
-		result, err := repo.GetPurchasesByUserId(context.Background(), userID)
+		result, err := repo.GetPurchasesByUserID(context.Background(), userID)
 
 		assert.NoError(t, err)
 		assert.Empty(t, result)
@@ -170,7 +170,7 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 			WithArgs(userID).
 			WillReturnError(expectedErr)
 
-		_, err := repo.GetPurchasesByUserId(context.Background(), userID)
+		_, err := repo.GetPurchasesByUserID(context.Background(), userID)
 
 		assert.Equal(t, expectedErr, err)
 	})
@@ -183,7 +183,7 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 			WithArgs(userID).
 			WillReturnRows(rows)
 
-		_, err := repo.GetPurchasesByUserId(context.Background(), userID)
+		_, err := repo.GetPurchasesByUserID(context.Background(), userID)
 
 		assert.ErrorContains(t, err, "converting NULL to string")
 	})

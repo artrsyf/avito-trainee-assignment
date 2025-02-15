@@ -18,7 +18,7 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
 	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB, logrus.New())
 
-	uow := uow.NewPostgresUnitOfWork(DB)
+	uow := uow.NewSQLUnitOfWork(DB)
 
 	uc := usecase.NewPurchaseUsecase(purchaseRepo, userRepo, uow, logrus.New())
 	ctx := context.Background()
@@ -36,7 +36,7 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, req)
 		require.NoError(t, err)
 
-		user, err := userRepo.GetById(ctx, userID)
+		user, err := userRepo.GetByID(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(500), user.Coins)
 
@@ -60,7 +60,7 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, req)
 		require.ErrorIs(t, err, entity.ErrNotEnoughBalance)
 
-		user, err := userRepo.GetById(ctx, userID)
+		user, err := userRepo.GetByID(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(300), user.Coins)
 	})
@@ -107,7 +107,7 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err = uc.Create(ctx, req)
 		require.Error(t, err)
 
-		user, err := userRepo.GetById(ctx, userID)
+		user, err := userRepo.GetByID(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(1000), user.Coins)
 

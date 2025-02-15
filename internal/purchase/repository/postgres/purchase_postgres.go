@@ -36,8 +36,8 @@ func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *en
 		return nil, err
 	}
 
-	err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserId, purchaseTypeID).
-		Scan(&createdPurchase.ID, &createdPurchase.PurchaserId, &createdPurchase.PurchaseTypeId)
+	err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserID, purchaseTypeID).
+		Scan(&createdPurchase.ID, &createdPurchase.PurchaserID, &createdPurchase.PurchaseTypeID)
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to insert purchase")
 		return nil, err
@@ -64,7 +64,7 @@ func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, pu
 	return &purchaseType, nil
 }
 
-func (repo *PurchasePostgresRepository) GetPurchasesByUserId(ctx context.Context, userID uint) (entity.Inventory, error) {
+func (repo *PurchasePostgresRepository) GetPurchasesByUserID(ctx context.Context, userID uint) (entity.Inventory, error) {
 	rows, err := repo.DB.QueryContext(ctx, `
 		SELECT pt.name, COUNT(p.id) as quantity
 		FROM purchases p
