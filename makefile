@@ -41,4 +41,4 @@ e2e_test:
 help:
 	@echo "Доступные команды:"
 
-.PHONY: run rebuild down drop unit_test unit_cover integration_test help
+.PHONY: run rebuild down drop unit_test unit_cover integration_test e2e_test help
