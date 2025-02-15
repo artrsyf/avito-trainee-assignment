@@ -33,6 +33,11 @@ integration_test:
 	go test -v ./tests/integration/
 	docker-compose -f $(COMPOSE_TEST_FILE) down --volumes --remove-orphans
 
+e2e_test:
+	docker-compose -f $(COMPOSE_TEST_FILE) up --build -d
+	go test -v ./tests/e2e/
+	docker-compose -f $(COMPOSE_TEST_FILE) down --volumes --remove-orphans
+
 help:
 	@echo "Доступные команды:"
 
