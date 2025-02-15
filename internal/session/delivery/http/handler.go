@@ -13,23 +13,28 @@ import (
 	sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
 type SessionHandler struct {
 	sessionUC usecase.SessionUsecaseI
+	validator *validator.Validate
 	logger    *logrus.Logger
 }
 
-func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, logger *logrus.Logger) *SessionHandler {
+func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, validator *validator.Validate, logger *logrus.Logger) *SessionHandler {
 	return &SessionHandler{
 		sessionUC: sessionUsecase,
+		validator: validator,
 		logger:    logger,
 	}
 }
 
 func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming Auth request")
+
+	w.Header().Set("Content-Type", "application/json")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -51,6 +56,13 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	if err = json.Unmarshal(body, authRequest); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		return
+	}
+
+	if err := authRequest.ValidateAuthRequest(h.validator); err != nil {
+		h.logger.WithError(err).Warn("Failed validation for auth request")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
 		return
 	}
 
@@ -85,7 +97,6 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(response); err != nil {
 		h.logger.WithError(err).Error("Failed to write auth response")

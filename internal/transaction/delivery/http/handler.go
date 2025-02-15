@@ -12,23 +12,28 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
 type TransactionHandler struct {
 	transactionUC usecase.TransactionUsecaseI
+	validator     *validator.Validate
 	logger        *logrus.Logger
 }
 
-func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, logger *logrus.Logger) *TransactionHandler {
+func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, validator *validator.Validate, logger *logrus.Logger) *TransactionHandler {
 	return &TransactionHandler{
 		transactionUC: transactionUsecase,
 		logger:        logger,
+		validator:     validator,
 	}
 }
 
 func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming SendCoins request")
+
+	w.Header().Set("Content-Type", "application/json")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -51,6 +56,13 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		return
+	}
+
+	if err := sendCoinsRequest.ValidateSendCoinsRequest(h.validator); err != nil {
+		h.logger.WithError(err).Warn("Failed validation for send coins request")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
 		return
 	}
 
@@ -85,6 +97,5 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

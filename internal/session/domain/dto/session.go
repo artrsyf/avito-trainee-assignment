@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -8,15 +9,36 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-playground/validator/v10"
 )
 
 type AuthRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required,min=3,max=50"`
+	Password string `json:"password" validate:"required,min=6,max=100"`
 }
 
 type AuthResponse struct {
 	Token string `json:"token"`
+}
+
+func (req *AuthRequest) ValidateAuthRequest(validate *validator.Validate) error {
+	err := validate.Struct(req)
+
+	for _, err := range err.(validator.ValidationErrors) {
+		field := err.Field()
+		switch err.Tag() {
+		case "required":
+			return errors.New(field + " is required")
+		case "min":
+			return errors.New(field + " is too short")
+		case "max":
+			return errors.New(field + " is too long")
+		default:
+			return errors.New(field + " is invalid")
+		}
+	}
+
+	return nil
 }
 
 func createJWT(authRequest *AuthRequest, ttl time.Time, userID uint) (string, error) {

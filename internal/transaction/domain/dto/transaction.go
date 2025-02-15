@@ -1,6 +1,34 @@
 package dto
 
+import (
+	"errors"
+
+	"github.com/go-playground/validator/v10"
+)
+
 type SendCoinsRequest struct {
-	ReceiverUsername string `json:"toUser"`
-	Amount           uint   `json:"amount"`
+	ReceiverUsername string `json:"toUser" validate:"required,min=3,max=50"`
+	Amount           uint   `json:"amount" validate:"required,gt=0"`
+}
+
+func (req *SendCoinsRequest) ValidateSendCoinsRequest(validate *validator.Validate) error {
+	err := validate.Struct(req)
+
+	for _, err := range err.(validator.ValidationErrors) {
+		field := err.Field()
+		switch err.Tag() {
+		case "required":
+			return errors.New(field + " is required")
+		case "min":
+			return errors.New(field + " is too short")
+		case "max":
+			return errors.New(field + " is too long")
+		case "gt":
+			return errors.New(field + " must be greater than 0")
+		default:
+			return errors.New(field + " is invalid")
+		}
+	}
+
+	return nil
 }

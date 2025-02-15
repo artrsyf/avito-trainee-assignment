@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -43,6 +44,7 @@ func initLogger() *logrus.Logger {
 
 func main() {
 	logger := initLogger()
+	validator := validator.New()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -126,9 +128,9 @@ func main() {
 		logger,
 	)
 
-	authHandler := sessionDelivery.NewSessionHandler(sessionUC, logger)
-	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, logger)
-	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, logger)
+	authHandler := sessionDelivery.NewSessionHandler(sessionUC, validator, logger)
+	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, validator, logger)
+	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, validator, logger)
 	userHandler := userDelivery.NewTransactionHandler(userUC, logger)
 
 	router.Handle("/api/auth",
@@ -136,15 +138,15 @@ func main() {
 
 	router.Handle("/api/sendCoin",
 		middleware.ValidateJWTToken(
-			http.HandlerFunc(transactionHandler.SendCoins))).Methods("POST")
+			http.HandlerFunc(transactionHandler.SendCoins), logger)).Methods("POST")
 
 	router.Handle("/api/buy/{item}",
 		middleware.ValidateJWTToken(
-			http.HandlerFunc(purchaseHandler.BuyItem))).Methods("GET")
+			http.HandlerFunc(purchaseHandler.BuyItem), logger)).Methods("GET")
 
 	router.Handle("/api/info",
 		middleware.ValidateJWTToken(
-			http.HandlerFunc(userHandler.GetInfo))).Methods("GET")
+			http.HandlerFunc(userHandler.GetInfo), logger)).Methods("GET")
 
 	logger.WithField("port", 8080).Info("Сервер запущен")
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", 8080), router); err != nil {

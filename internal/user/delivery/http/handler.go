@@ -27,6 +27,8 @@ func NewTransactionHandler(userUsecase usecase.UserUsecaseI, logger *logrus.Logg
 func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming GetInfo request")
 
+	w.Header().Set("Content-Type", "application/json")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -54,7 +56,6 @@ func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if _, err = w.Write(response); err != nil {
 		h.logger.WithError(err).Error("Failed to write get info response")

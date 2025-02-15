@@ -11,24 +11,29 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
 type PurchaseHandler struct {
 	purchaseUC usecase.PurchaseUsecaseI
+	validator  *validator.Validate
 	logger     *logrus.Logger
 }
 
-func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, logger *logrus.Logger) *PurchaseHandler {
+func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, validator *validator.Validate, logger *logrus.Logger) *PurchaseHandler {
 	return &PurchaseHandler{
 		purchaseUC: purchaseUsecase,
+		validator:  validator,
 		logger:     logger,
 	}
 }
 
 func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming BuyItem request")
+
+	w.Header().Set("Content-Type", "application/json")
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -45,6 +50,12 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 	purchaseItemRequest := &dto.PurchaseItemRequest{
 		PurchaseTypeName: purchaseTypeName,
 		UserID:           customerUserID,
+	}
+	if err := purchaseItemRequest.ValidatePurchaseRequest(h.validator); err != nil {
+		h.logger.WithError(err).Warn("Failed validation for purchase request")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
+		return
 	}
 
 	err := h.purchaseUC.Create(ctx, purchaseItemRequest)
@@ -65,6 +76,5 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }
