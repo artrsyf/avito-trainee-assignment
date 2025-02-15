@@ -14,10 +14,10 @@ type SendCoinsRequest struct {
 func (req *SendCoinsRequest) ValidateSendCoinsRequest(validate *validator.Validate) error {
 	err := validate.Struct(req)
 	if err != nil {
-		// Преобразуем ошибку в тип validator.ValidationErrors
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
 			for _, err := range validationErrs {
 				field := err.Field()
+
 				switch err.Tag() {
 				case "required":
 					return errors.New(field + " is required")

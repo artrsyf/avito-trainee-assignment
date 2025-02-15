@@ -46,7 +46,7 @@ func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest, coinsBalance uint)
 
 	return &entity.User{
 		Username:     authRequest.Username,
-		Coins:        coinsBalance, /*TODO magic number*/
+		Coins:        coinsBalance,
 		PasswordHash: string(hashedPassword),
 	}, nil
 }

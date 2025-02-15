@@ -18,8 +18,6 @@ import (
 
 type SessionUsecaseI interface {
 	LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
-	/*TODO Implement method*/
-	// Check(userID uint) (*sessionEntity.Session, error)
 }
 
 type SessionUsecase struct {
@@ -103,7 +101,7 @@ func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authReq
 	session, err := sessionDTO.AuthRequestToEntity(
 		authRequest,
 		userID,
-		time.Now().Add(accessTokenExpiration), /*TODO*/
+		time.Now().Add(accessTokenExpiration),
 		time.Now().Add(refreshTokenExpiration),
 	)
 	if err != nil {

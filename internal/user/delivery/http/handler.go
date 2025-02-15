@@ -9,6 +9,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,15 +28,17 @@ func NewUserHandler(userUsecase usecase.UserUsecaseI, logger *logrus.Logger) *Us
 func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming GetInfo request")
 
-	w.Header().Set("Content-Type", "application/json")
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	senderUserID, ok := ctx.Value(middleware.UserIDContextKey).(uint)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
+		return
 	}
 
 	getInfoResponse, err := h.userUC.GetInfoById(ctx, senderUserID)
@@ -45,15 +48,22 @@ func (h *UserHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 			"stack": string(debug.Stack()),
 		}).Error("GetInfoById error handling")
 
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
 	}
 
 	response, err := json.Marshal(getInfoResponse)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to marshal auth response")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)

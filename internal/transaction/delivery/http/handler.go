@@ -13,6 +13,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
@@ -34,16 +35,17 @@ func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, valid
 func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming SendCoins request")
 
-	w.Header().Set("Content-Type", "application/json")
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to read request body")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": "bad request"},
+		)
 		return
 	}
 	defer func() {
@@ -55,27 +57,41 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 	sendCoinsRequest := &dto.SendCoinsRequest{}
 	err = json.Unmarshal(body, sendCoinsRequest)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": "bad request"},
+		)
 		return
 	}
 
 	if err := sendCoinsRequest.ValidateSendCoinsRequest(h.validator); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for send coins request")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": err.Error()},
+		)
 		return
 	}
 
 	senderUsername, ok := ctx.Value(middleware.UsernameContextKey).(string)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
+		return
 	}
 
 	if sendCoinsRequest.ReceiverUsername == senderUsername {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "money transfer to yourself is not allowed"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": "money transfer to yourself is not allowed"},
+		)
+		return
 	}
 
 	transactionEntity := &transaction.Transaction{
@@ -93,14 +109,23 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case transaction.ErrNotEnoughBalance:
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusBadRequest,
+				map[string]string{"errors": "not enough balance"},
+			)
 		case userEntity.ErrIsNotExist:
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "can't find such user"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusBadRequest,
+				map[string]string{"errors": "can't find such user"},
+			)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusInternalServerError,
+				map[string]string{"errors": "internal error"},
+			)
 		}
 		return
 	}

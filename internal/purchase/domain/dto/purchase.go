@@ -18,13 +18,14 @@ func (req *PurchaseItemRequest) ValidatePurchaseRequest(validate *validator.Vali
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
 			for _, err := range validationErrs {
 				field := err.Field()
+
 				switch err.Tag() {
 				case "required":
 					return errors.New(field + " is required")
 				case "gt":
-					return errors.New(field + " must be greater than 0") // Сообщение на основе тега "gt"
+					return errors.New(field + " must be greater than 0")
 				default:
-					return errors.New(field + " is invalid") // Сообщение для других ошибок
+					return errors.New(field + " is invalid")
 				}
 			}
 		}

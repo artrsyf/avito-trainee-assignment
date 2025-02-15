@@ -13,6 +13,7 @@ import (
 	sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
+	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
@@ -34,16 +35,17 @@ func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, validator *valida
 func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming Auth request")
 
-	w.Header().Set("Content-Type", "application/json")
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to read request body")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": "bad request"},
+		)
 		return
 	}
 	defer func() {
@@ -54,15 +56,21 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 
 	authRequest := &dto.AuthRequest{}
 	if err = json.Unmarshal(body, authRequest); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": "bad request"},
+		)
 		return
 	}
 
 	if err := authRequest.ValidateAuthRequest(h.validator); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for auth request")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": err.Error()},
+		)
 		return
 	}
 
@@ -75,14 +83,23 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 
 		switch err {
 		case sessionEntity.ErrWrongCredentials:
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "wrong credentials"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusUnauthorized,
+				map[string]string{"errors": "wrong credentials"},
+			)
 		case userEntity.ErrAlreadyCreated:
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "user conflict"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusConflict,
+				map[string]string{"errors": "user conflict"},
+			)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusInternalServerError,
+				map[string]string{"errors": "internal error"},
+			)
 		}
 		return
 	}
@@ -92,8 +109,11 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(dto.SessionEntityToResponse(createdSessionEntity))
 	if err != nil {
 		h.logger.WithError(err).Error("Failed to marshal auth response")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
 		return
 	}
 

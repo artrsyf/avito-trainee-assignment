@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	jsonresponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -33,8 +33,6 @@ func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, validator *val
 func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Incoming BuyItem request")
 
-	w.Header().Set("Content-Type", "application/json")
-
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -43,8 +41,12 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 
 	customerUserID, ok := ctx.Value(middleware.UserIDContextKey).(uint)
 	if !ok {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusInternalServerError,
+			map[string]string{"errors": "internal error"},
+		)
+		return
 	}
 
 	purchaseItemRequest := &dto.PurchaseItemRequest{
@@ -53,8 +55,11 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := purchaseItemRequest.ValidatePurchaseRequest(h.validator); err != nil {
 		h.logger.WithError(err).Warn("Failed validation for purchase request")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"errors": err.Error()})
+		jsonresponse.JsonResponse(
+			w,
+			http.StatusBadRequest,
+			map[string]string{"errors": err.Error()},
+		)
 		return
 	}
 
@@ -64,16 +69,26 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 			"error": err.Error(),
 			"stack": string(debug.Stack()),
 		}).Debug("Purchase create error handling")
+
 		switch err {
 		case entity.ErrNotEnoughBalance:
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusBadRequest,
+				map[string]string{"errors": "not enough balance"},
+			)
 		case entity.ErrNotExistedProduct:
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "item not found"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusNotFound,
+				map[string]string{"errors": "item not found"},
+			)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+			jsonresponse.JsonResponse(
+				w,
+				http.StatusInternalServerError,
+				map[string]string{"errors": "internal error"},
+			)
 		}
 		return
 	}
