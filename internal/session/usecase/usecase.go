@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
 	sessionDTO "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
@@ -25,24 +26,28 @@ type SessionUsecase struct {
 	sessionRepo sessionRepo.SessionRepositoryI
 	userRepo    userRepo.UserRepositoryI
 	userConfig  config.UserConfig
+	logger      *logrus.Logger
 }
 
-func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, config config.UserConfig) *SessionUsecase {
+func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, config config.UserConfig, logger *logrus.Logger) *SessionUsecase {
 	return &SessionUsecase{
 		sessionRepo: sessionRepository,
 		userRepo:    userRepository,
 		userConfig:  config,
+		logger:      logger,
 	}
 }
 
 func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
 	userModel, err := uc.userRepo.GetByUsername(ctx, authRequest.Username)
 	if err != nil && err != userEntity.ErrIsNotExist {
+		uc.logger.WithError(err).Error("Failed to get user by username")
 		return nil, err
 	}
 
 	if userModel != nil {
 		if !checkPassword(authRequest.Password, userModel.PasswordHash) {
+			uc.logger.WithError(err).Error("Failed to authenticate user")
 			return nil, sessionEntity.ErrWrongCredentials
 		}
 
@@ -51,6 +56,7 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 			return uc.grantSession(ctx, userModel.ID, authRequest)
 		}
 		if err != nil {
+			uc.logger.WithError(err).Error("An error occured due checking user session")
 			return nil, err
 		}
 
@@ -60,11 +66,17 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 
 	user, err := userDTO.AuthRequestToEntity(authRequest, uc.userConfig.InitCoinsBalance)
 	if err != nil {
+		uc.logger.WithError(err).WithField(
+			"wrong request", authRequest,
+		).Error("Failed cast request to entity")
 		return nil, err
 	}
 
 	createdUserModel, err := uc.userRepo.Create(ctx, user)
 	if err != nil {
+		uc.logger.WithError(err).WithField(
+			"broken user", user,
+		).Error("Failed create new user")
 		return nil, err
 	}
 
@@ -78,11 +90,13 @@ func checkPassword(inputPassword, storedPasswordHash string) bool {
 func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
 	accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
 	if err != nil {
+		uc.logger.WithError(err).Error("Failed to parse access token expiration")
 		return nil, err
 	}
 
 	refreshTokenExpiration, err := uc.userConfig.Auth.GetRefreshTokenExpiration()
 	if err != nil {
+		uc.logger.WithError(err).Error("Failed to parse refresh token expiration")
 		return nil, err
 	}
 
@@ -93,13 +107,25 @@ func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authReq
 		time.Now().Add(refreshTokenExpiration),
 	)
 	if err != nil {
+		uc.logger.WithError(err).WithFields(logrus.Fields{
+			"user_id":                 userID,
+			"auth_request":            authRequest,
+			"access_token_duratuion":  accessTokenExpiration,
+			"refresh_token_duratuion": refreshTokenExpiration,
+		}).Error("Failed cast session request to entity")
 		return nil, err
 	}
 
 	createdSessionModel, err := uc.sessionRepo.Create(ctx, session)
 	if err != nil {
+		uc.logger.WithError(err).Error("Failed to create user session")
 		return nil, err
 	}
+
+	uc.logger.WithFields(logrus.Fields{
+		"user_id":  userID,
+		"username": authRequest.Username,
+	}).Info("Granted new session")
 
 	return sessionDTO.SessionModelToEntity(createdSessionModel), nil
 }

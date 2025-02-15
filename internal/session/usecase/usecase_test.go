@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
@@ -35,7 +36,7 @@ func TestSessionUsecase_LoginOrSignup(t *testing.T) {
 		},
 	}
 
-	uc := NewSessionUsecase(mockSessionRepo, mockUserRepo, cfg)
+	uc := NewSessionUsecase(mockSessionRepo, mockUserRepo, cfg, logrus.New())
 
 	ctx := context.Background()
 	testAuthRequest := &dto.AuthRequest{

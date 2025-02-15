@@ -12,16 +12,16 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow/postgres"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTransactionUsecase_Integration(t *testing.T) {
-	// Инициализация репозиториев
-	userRepo := userRepo.NewUserPostgresRepository(DB)
-	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB)
+	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
+	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB, logrus.New())
 	uow := uow.NewPostgresUnitOfWork(DB)
 
-	uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow)
+	uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow, logrus.New())
 	ctx := context.Background()
 
 	t.Run("successful transaction", func(t *testing.T) {
@@ -38,14 +38,12 @@ func TestTransactionUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, transaction)
 		require.NoError(t, err)
 
-		// Проверка балансов
 		senderUser, _ := userRepo.GetByUsername(ctx, "sender")
 		require.Equal(t, uint(700), senderUser.Coins)
 
 		receiverUser, _ := userRepo.GetByUsername(ctx, "receiver")
 		require.Equal(t, uint(800), receiverUser.Coins)
 
-		// Проверка записи транзакции
 		var txCount int
 		DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&txCount)
 		require.Equal(t, 1, txCount)
@@ -65,7 +63,6 @@ func TestTransactionUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, transaction)
 		require.ErrorIs(t, err, entity.ErrNotEnoughBalance)
 
-		// Проверка неизменности балансов
 		senderUser, _ := userRepo.GetByUsername(ctx, "poor_sender")
 		require.Equal(t, uint(200), senderUser.Coins)
 
@@ -106,21 +103,18 @@ func TestTransactionUsecase_Integration(t *testing.T) {
 		_ = CreateTestUser(t, "sender", 1000)
 		_ = CreateTestUser(t, "receiver", 500)
 
-		// Сломаем таблицу пользователей после первого обновления
 		transaction := &entity.Transaction{
 			SenderUsername:   "sender",
 			ReceiverUsername: "receiver",
 			Amount:           300,
 		}
 
-		// Модифицируем UOW для эмуляции ошибки
 		uow := &FaultyUOW{db: DB, failOn: 2}
-		uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow)
+		uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow, logrus.New())
 
 		err := uc.Create(ctx, transaction)
 		require.Error(t, err)
 
-		// Проверка отката
 		senderUser, _ := userRepo.GetByUsername(ctx, "sender")
 		require.Equal(t, uint(1000), senderUser.Coins)
 
@@ -129,27 +123,6 @@ func TestTransactionUsecase_Integration(t *testing.T) {
 	})
 }
 
-// Вспомогательные функции и структуры
-
-// func setupTestData(t *testing.T) {
-// 	_, err := db.Exec(`
-// 		DELETE FROM users;
-// 		DELETE FROM transactions;
-// 	`)
-// 	require.NoError(t, err)
-// }
-
-// func createTestUser(t *testing.T, username string, coins uint) uint {
-// 	var id uint
-// 	err := db.QueryRow(
-// 		"INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, 'hash') RETURNING id",
-// 		username, coins,
-// 	).Scan(&id)
-// 	require.NoError(t, err)
-// 	return id
-// }
-
-// FaultyUOW — реализация UnitOfWorkI для тестирования откатов
 type FaultyUOW struct {
 	db      *sql.DB
 	tx      *sql.Tx

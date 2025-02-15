@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
@@ -25,7 +26,7 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	mockUserRepo := mockUser.NewMockUserRepositoryI(ctrl)
 	mockUow := mock_uow.NewMockUnitOfWorkI(ctrl)
 
-	uc := NewPurchaseUsecase(mockPurchaseRepo, mockUserRepo, mockUow)
+	uc := NewPurchaseUsecase(mockPurchaseRepo, mockUserRepo, mockUow, logrus.New())
 
 	ctx := context.Background()
 	testRequest := &dto.PurchaseItemRequest{

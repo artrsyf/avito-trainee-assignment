@@ -11,19 +11,18 @@ import (
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestUserUsecase_Integration(t *testing.T) {
-	// Инициализация репозиториев
-	userRepo := userRepo.NewUserPostgresRepository(DB)
-	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB)
-	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB)
+	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
+	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB, logrus.New())
+	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB, logrus.New())
 
-	uc := usecase.NewUserUsecase(purchaseRepo, transactionRepo, userRepo)
+	uc := usecase.NewUserUsecase(purchaseRepo, transactionRepo, userRepo, logrus.New())
 	ctx := context.Background()
 
-	// Подготовка тестовых данных
 	SetupTestData(t, DB)
 
 	t.Run("get user info with empty history", func(t *testing.T) {
@@ -43,7 +42,6 @@ func TestUserUsecase_Integration(t *testing.T) {
 		CreatePurchaseType(t, DB, "item1", uint(100))
 		CreatePurchaseType(t, DB, "item2", uint(200))
 
-		// Создаем покупки
 		createPurchase(t, userID, "item1")
 		createPurchase(t, userID, "item1")
 		createPurchase(t, userID, "item2")
@@ -61,12 +59,10 @@ func TestUserUsecase_Integration(t *testing.T) {
 		receiver1ID := CreateTestUser(t, "receiver1", 0)
 		receiver2ID := CreateTestUser(t, "receiver2", 0)
 
-		// Создаем транзакции
 		createTransaction(t, senderID, receiver1ID, 100)
 		createTransaction(t, senderID, receiver1ID, 200)
 		createTransaction(t, senderID, receiver2ID, 300)
 
-		// Проверяем отправителя
 		senderInfo, err := uc.GetInfoById(ctx, senderID)
 		require.NoError(t, err)
 
@@ -74,7 +70,6 @@ func TestUserUsecase_Integration(t *testing.T) {
 		require.Equal(t, uint(300), findSentAmount(senderInfo.CoinHistory.SentHistory, "receiver1"))
 		require.Equal(t, uint(300), findSentAmount(senderInfo.CoinHistory.SentHistory, "receiver2"))
 
-		// Проверяем получателя
 		receiverInfo, err := uc.GetInfoById(ctx, receiver1ID)
 		require.NoError(t, err)
 
@@ -88,37 +83,6 @@ func TestUserUsecase_Integration(t *testing.T) {
 		require.Equal(t, err, userEntity.ErrIsNotExist)
 	})
 }
-
-// Вспомогательные функции
-
-// func setupTestData(t *testing.T) {
-// 	// Очистка данных
-// 	_, err := db.Exec(`
-// 		DELETE FROM users;
-// 		DELETE FROM purchase_types;
-// 		DELETE FROM purchases;
-// 		DELETE FROM transactions;
-// 	`)
-// 	require.NoError(t, err)
-// }
-
-// func createTestUser(t *testing.T, username string, coins uint) uint {
-// 	var id uint
-// 	err := db.QueryRow(
-// 		"INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, 'hash') RETURNING id",
-// 		username, coins,
-// 	).Scan(&id)
-// 	require.NoError(t, err)
-// 	return id
-// }
-
-// func createPurchaseType(t *testing.T, name string, cost uint) {
-// 	_, err := db.Exec(
-// 		"INSERT INTO purchase_types (name, cost) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-// 		name, cost,
-// 	)
-// 	require.NoError(t, err)
-// }
 
 func createPurchase(t *testing.T, userID uint, itemType string) {
 	_, err := DB.Exec(`

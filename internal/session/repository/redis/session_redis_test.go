@@ -11,13 +11,14 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 	"github.com/go-redis/redismock/v9"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSessionRedisRepository_Create(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := NewSessionRedisRepository(db)
+	repo := NewSessionRedisRepository(db, logrus.New())
 
 	now := time.Now()
 	sessionEntity := &entity.Session{
@@ -71,7 +72,7 @@ func TestSessionRedisRepository_Create(t *testing.T) {
 func TestSessionRedisRepository_Check(t *testing.T) {
 	ctx := context.Background()
 	db, mock := redismock.NewClientMock()
-	repo := NewSessionRedisRepository(db)
+	repo := NewSessionRedisRepository(db, logrus.New())
 
 	fixedTime := time.Date(2025, time.February, 14, 12, 0, 0, 0, time.UTC)
 
@@ -122,6 +123,6 @@ func TestSessionRedisRepository_Check(t *testing.T) {
 
 func TestNewSessionRedisRepository(t *testing.T) {
 	db := redis.NewClient(&redis.Options{})
-	repo := NewSessionRedisRepository(db)
+	repo := NewSessionRedisRepository(db, logrus.New())
 	assert.NotNil(t, repo)
 }

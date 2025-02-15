@@ -8,6 +8,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func TestTransactionPostgresRepository_Create(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewTransactionPostgresRepository(db)
+	repo := NewTransactionPostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("INSERT INTO transactions .* RETURNING .*").
@@ -64,7 +65,7 @@ func TestTransactionPostgresRepository_GetReceivedByUserID(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewTransactionPostgresRepository(db)
+	repo := NewTransactionPostgresRepository(db, logrus.New())
 	userID := uint(1)
 
 	t.Run("SuccessWithData", func(t *testing.T) {
@@ -130,7 +131,7 @@ func TestTransactionPostgresRepository_GetSentByUserID(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewTransactionPostgresRepository(db)
+	repo := NewTransactionPostgresRepository(db, logrus.New())
 	userID := uint(1)
 
 	t.Run("SuccessWithData", func(t *testing.T) {

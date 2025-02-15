@@ -10,18 +10,17 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
 	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow/postgres"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestPurchaseUsecase_Integration(t *testing.T) {
-	// Инициализация репозиториев
-	userRepo := userRepo.NewUserPostgresRepository(DB)
-	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB)
+	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
+	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB, logrus.New())
 
-	// Мок UOW с реальным подключением к базе
 	uow := uow.NewPostgresUnitOfWork(DB)
 
-	uc := usecase.NewPurchaseUsecase(purchaseRepo, userRepo, uow)
+	uc := usecase.NewPurchaseUsecase(purchaseRepo, userRepo, uow, logrus.New())
 	ctx := context.Background()
 
 	t.Run("successful purchase", func(t *testing.T) {
@@ -37,12 +36,10 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, req)
 		require.NoError(t, err)
 
-		// Проверка обновления баланса
 		user, err := userRepo.GetById(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(500), user.Coins)
 
-		// Проверка создания покупки
 		var count int
 		err = DB.QueryRowContext(ctx,
 			"SELECT COUNT(*) FROM purchases WHERE purchaser_id = $1", userID).Scan(&count)
@@ -63,7 +60,6 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err := uc.Create(ctx, req)
 		require.ErrorIs(t, err, entity.ErrNotEnoughBalance)
 
-		// Проверка неизменности баланса
 		user, err := userRepo.GetById(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(300), user.Coins)
@@ -100,7 +96,6 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		userID := CreateTestUser(t, "user4", 1000)
 		CreatePurchaseType(t, DB, "test", 800)
 
-		// Сломаем запрос вручную после успешного обновления пользователя
 		_, err := DB.Exec("DROP TABLE purchases")
 		require.NoError(t, err)
 
@@ -112,42 +107,13 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 		err = uc.Create(ctx, req)
 		require.Error(t, err)
 
-		// Проверка отката транзакции
 		user, err := userRepo.GetById(ctx, userID)
 		require.NoError(t, err)
 		require.Equal(t, uint(1000), user.Coins)
 
-		// Восстановим таблицу
 		createPurchasesTable(t)
 	})
 }
-
-// func setupTestData(t *testing.T) {
-// 	_, err := db.Exec(`
-// 		DELETE FROM users;
-// 		DELETE FROM purchase_types;
-// 		DELETE FROM purchases;
-// 	`)
-// 	require.NoError(t, err)
-// }
-
-// func createTestUser(t *testing.T, username string, coins uint) uint {
-// 	var id uint
-// 	err := db.QueryRow(
-// 		"INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, 'hash') RETURNING id",
-// 		username, coins,
-// 	).Scan(&id)
-// 	require.NoError(t, err)
-// 	return id
-// }
-
-// func createPurchaseType(t *testing.T, name string, cost uint) {
-// 	_, err := db.Exec(
-// 		"INSERT INTO purchase_types (name, cost) VALUES ($1, $2)",
-// 		name, cost,
-// 	)
-// 	require.NoError(t, err)
-// }
 
 func createPurchasesTable(t *testing.T) {
 	_, err := DB.Exec(`

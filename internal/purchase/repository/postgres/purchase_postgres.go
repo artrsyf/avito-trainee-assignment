@@ -6,15 +6,18 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
+	"github.com/sirupsen/logrus"
 )
 
 type PurchasePostgresRepository struct {
-	DB *sql.DB
+	DB     *sql.DB
+	logger *logrus.Logger
 }
 
-func NewPurchasePostgresRepository(db *sql.DB) *PurchasePostgresRepository {
+func NewPurchasePostgresRepository(db *sql.DB, logger *logrus.Logger) *PurchasePostgresRepository {
 	return &PurchasePostgresRepository{
-		DB: db,
+		DB:     db,
+		logger: logger,
 	}
 }
 
@@ -25,12 +28,14 @@ func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *en
 	err := repo.DB.
 		QueryRowContext(ctx, "SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&purchaseTypeID)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to select purchase type id")
 		return nil, err
 	}
 
 	err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserId, purchaseTypeID).
 		Scan(&createdPurchase.ID, &createdPurchase.PurchaserId, &createdPurchase.PurchaseTypeId)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to insert purchase")
 		return nil, err
 	}
 
@@ -44,6 +49,7 @@ func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, pu
 		QueryRowContext(ctx, "SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
 		Scan(&purchaseType.ID, &purchaseType.Name, &purchaseType.Cost)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to select product by type")
 		return nil, err
 	}
 
@@ -58,15 +64,21 @@ func (repo *PurchasePostgresRepository) GetPurchasesByUserId(ctx context.Context
 		WHERE p.purchaser_id = $1
 		GROUP BY pt.name`, userID)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to select user inventory")
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			repo.logger.WithError(err).Warn("Failed to close rows selecting user inventory")
+		}
+	}()
 
 	inventory := entity.Inventory{}
 	for rows.Next() {
 		currentPurchaseGroup := entity.PurchaseGroup{}
 		err := rows.Scan(&currentPurchaseGroup.PurchaseTypeName, &currentPurchaseGroup.Quantity)
 		if err != nil {
+			repo.logger.WithError(err).Error("Failed to select purchase group")
 			return nil, err
 		}
 

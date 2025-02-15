@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
@@ -34,15 +34,24 @@ import (
 	userDelivery "github.com/artrsyf/avito-trainee-assignment/internal/user/delivery/http"
 )
 
+func initLogger() *logrus.Logger {
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetOutput(os.Stdout)
+	return logger
+}
+
 func main() {
+	logger := initLogger()
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err) /*TODO*/
+		logger.WithError(err).Fatal("Отсутствует .env файл")
 	}
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		panic(err)
+		logger.WithError(err).Fatal("Ошибка при закгрузке конфиг файла")
 	}
 
 	postgresDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -55,14 +64,17 @@ func main() {
 
 	postgresConnect, err := sql.Open("postgres", postgresDSN)
 	if err != nil {
-		log.Fatalf("Ошибка при подключении к БД: %v", err)
+		logger.WithError(err).Fatal("Ошибка при подключении к БД")
 	}
 
 	redisAddr := fmt.Sprintf("%s:%s",
 		os.Getenv("REDIS_HOST"),
 		os.Getenv("REDIS_PORT"),
 	)
-	redisDB, _ := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
+	redisDB, err := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
+	if err != nil {
+		logger.WithError(err).Fatal("Ошибка при касте индекса БД Redis")
+	}
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
@@ -71,20 +83,20 @@ func main() {
 
 	defer func() {
 		if err = postgresConnect.Close(); err != nil {
-			panic(err)
+			logger.WithError(err).Fatal("Ошибка при закрытии коннекта с Postgres")
 		}
 
 		if err := redisClient.Close(); err != nil {
-			panic(err)
+			logger.WithError(err).Fatal("Ошибка при закрытии коннекта с Redis")
 		}
 	}()
 
 	router := mux.NewRouter()
 
-	userRepo := userRepository.NewUserPostgresRepository(postgresConnect)
-	sessionRepo := sessionRepository.NewSessionRedisRepository(redisClient)
-	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect)
-	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect)
+	userRepo := userRepository.NewUserPostgresRepository(postgresConnect, logger)
+	sessionRepo := sessionRepository.NewSessionRedisRepository(redisClient, logger)
+	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect, logger)
+	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect, logger)
 
 	transactionUOW := uow.NewPostgresUnitOfWork(postgresConnect)
 	purchaseUOW := uow.NewPostgresUnitOfWork(postgresConnect)
@@ -93,27 +105,31 @@ func main() {
 		sessionRepo,
 		userRepo,
 		cfg.User,
+		logger,
 	)
 	transactionUC := transactionUsecase.NewTransactionUsecase(
 		transactionRepo,
 		userRepo,
 		transactionUOW,
+		logger,
 	)
 	purchaseUC := purchaseUsecase.NewPurchaseUsecase(
 		purchaseRepo,
 		userRepo,
 		purchaseUOW,
+		logger,
 	)
 	userUC := userUsecase.NewUserUsecase(
 		purchaseRepo,
 		transactionRepo,
 		userRepo,
+		logger,
 	)
 
-	authHandler := sessionDelivery.NewSessionHandler(sessionUC)
-	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC)
-	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC)
-	userHandler := userDelivery.NewTransactionHandler(userUC)
+	authHandler := sessionDelivery.NewSessionHandler(sessionUC, logger)
+	transactionHandler := transactionDelivery.NewTransactionHandler(transactionUC, logger)
+	purchaseHandler := purchaseDelivery.NewPurchaseHandler(purchaseUC, logger)
+	userHandler := userDelivery.NewTransactionHandler(userUC, logger)
 
 	router.Handle("/api/auth",
 		http.HandlerFunc(authHandler.Auth)).Methods("POST")
@@ -130,6 +146,8 @@ func main() {
 		middleware.ValidateJWTToken(
 			http.HandlerFunc(userHandler.GetInfo))).Methods("GET")
 
-	fmt.Println("server starts on :8080")
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", 8080), router))
+	logger.WithField("port", 8080).Info("Сервер запущен")
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", 8080), router); err != nil {
+		logger.WithError(err).Fatal("Ошибка запуска сервера")
+	}
 }

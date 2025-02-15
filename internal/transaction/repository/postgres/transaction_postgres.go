@@ -6,15 +6,18 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+	"github.com/sirupsen/logrus"
 )
 
 type TransactionPostgresRepository struct {
-	DB *sql.DB
+	DB     *sql.DB
+	logger *logrus.Logger
 }
 
-func NewTransactionPostgresRepository(db *sql.DB) *TransactionPostgresRepository {
+func NewTransactionPostgresRepository(db *sql.DB, logger *logrus.Logger) *TransactionPostgresRepository {
 	return &TransactionPostgresRepository{
-		DB: db,
+		DB:     db,
+		logger: logger,
 	}
 }
 
@@ -23,8 +26,13 @@ func (repo *TransactionPostgresRepository) Create(ctx context.Context, transacti
 	err := repo.DB.QueryRowContext(ctx, "INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
 		Scan(&createdTransaction.ID, &createdTransaction.SenderUserID, &createdTransaction.ReceiverUserID, &createdTransaction.Amount)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to create transaction")
 		return nil, err
 	}
+
+	repo.logger.WithFields(logrus.Fields{
+		"transaction_id": createdTransaction.ID,
+	}).Debug("Created transaction in Postgres")
 
 	return &createdTransaction, nil
 }
@@ -43,15 +51,21 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Conte
 		GROUP BY 
 			u1.username`, userID)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to select received transaction group")
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			repo.logger.WithError(err).Warn("Failed to close rows selecting received transactions")
+		}
+	}()
 
 	receivedHistory := entity.ReceivedHistory{}
 	for rows.Next() {
 		currentReceivedTransactionGroup := entity.ReceivedTransactionGroup{}
 		err := rows.Scan(&currentReceivedTransactionGroup.SenderUsername, &currentReceivedTransactionGroup.Amount)
 		if err != nil {
+			repo.logger.WithError(err).Error("Failed to select received transactions")
 			return nil, err
 		}
 
@@ -75,15 +89,21 @@ func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, 
 		GROUP BY 
 			u1.username`, userID)
 	if err != nil {
+		repo.logger.WithError(err).Error("Failed to select sent transaction group")
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			repo.logger.WithError(err).Warn("Failed to close rows selecting sent transactions")
+		}
+	}()
 
 	sentHistory := entity.SentHistory{}
 	for rows.Next() {
 		currentSentTransactionGroup := entity.SentTransactionGroup{}
 		err := rows.Scan(&currentSentTransactionGroup.ReceiverUsername, &currentSentTransactionGroup.Amount)
 		if err != nil {
+			repo.logger.WithError(err).Error("Failed to select sent transactions")
 			return nil, err
 		}
 

@@ -13,7 +13,6 @@ var (
 	RedisClient *redis.Client
 )
 
-// setupTestData очищает данные в базе данных перед каждым тестом.
 func SetupTestData(t *testing.T, db *sql.DB) {
 	_, err := db.Exec(`
 		DELETE FROM users;
@@ -24,7 +23,6 @@ func SetupTestData(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 }
 
-// createTestUser создает нового пользователя с заданным именем и количеством монет.
 func CreateTestUser(t *testing.T, username string, coins uint) uint {
 	var id uint
 	err := DB.QueryRow(
@@ -35,7 +33,6 @@ func CreateTestUser(t *testing.T, username string, coins uint) uint {
 	return id
 }
 
-// createPurchaseType создает новый тип покупки с заданным названием и стоимостью.
 func CreatePurchaseType(t *testing.T, db *sql.DB, name string, cost uint) {
 	_, err := db.Exec(
 		"INSERT INTO purchase_types (name, cost) VALUES ($1, $2) ON CONFLICT DO NOTHING",

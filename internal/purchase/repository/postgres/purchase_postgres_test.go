@@ -8,6 +8,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewPurchasePostgresRepository(db)
+	repo := NewPurchasePostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT id FROM purchase_types WHERE name = \\$1").
@@ -82,7 +83,7 @@ func TestPurchasePostgresRepository_GetProductByType(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewPurchasePostgresRepository(db)
+	repo := NewPurchasePostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT id, name, cost FROM purchase_types WHERE name = \\$1").
@@ -129,7 +130,7 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewPurchasePostgresRepository(db)
+	repo := NewPurchasePostgresRepository(db, logrus.New())
 	userID := uint(1)
 
 	t.Run("SuccessWithData", func(t *testing.T) {

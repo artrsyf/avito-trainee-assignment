@@ -3,49 +3,63 @@ package http
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	"github.com/sirupsen/logrus"
 )
 
 type TransactionHandler struct {
 	transactionUC usecase.TransactionUsecaseI
+	logger        *logrus.Logger
 }
 
-func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI) *TransactionHandler {
+func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, logger *logrus.Logger) *TransactionHandler {
 	return &TransactionHandler{
 		transactionUC: transactionUsecase,
+		logger:        logger,
 	}
 }
 
 func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Incoming SendCoins request")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
 	if err != nil {
-		/*Handle*/
-		fmt.Println(err)
+		h.logger.WithError(err).Error("Failed to read request body")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
 		return
 	}
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			h.logger.WithError(err).Warn("Failed to close request body")
+		}
+	}()
 
 	sendCoinsRequest := &dto.SendCoinsRequest{}
 	err = json.Unmarshal(body, sendCoinsRequest)
 	if err != nil {
-		/*Handle*/
-		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": "bad request"})
 		return
 	}
 
-	/*TODO check senderUsername work*/
-	senderUsername := ctx.Value(middleware.UsernameContextKey).(string)
+	senderUsername, ok := ctx.Value(middleware.UsernameContextKey).(string)
+	if !ok {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+	}
+
 	transactionEntity := &entity.Transaction{
 		SenderUsername:   senderUsername,
 		ReceiverUsername: sendCoinsRequest.ReceiverUsername,
@@ -54,10 +68,23 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 
 	err = h.transactionUC.Create(ctx, transactionEntity)
 	if err != nil {
-		/*Handle*/
-		fmt.Println(err)
+		h.logger.WithFields(logrus.Fields{
+			"error": err.Error(),
+			"stack": string(debug.Stack()),
+		}).Debug("Transaction create error handling")
+
+		switch err {
+		case entity.ErrNotEnoughBalance:
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
+
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
+		}
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 }

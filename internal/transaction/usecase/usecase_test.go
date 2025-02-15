@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	transactionModel "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
@@ -24,7 +25,7 @@ func TestTransactionUsecase_Create(t *testing.T) {
 	mockUserRepo := mockUser.NewMockUserRepositoryI(ctrl)
 	mockUow := mock_uow.NewMockUnitOfWorkI(ctrl)
 
-	uc := NewTransactionUsecase(mockTxRepo, mockUserRepo, mockUow)
+	uc := NewTransactionUsecase(mockTxRepo, mockUserRepo, mockUow, logrus.New())
 
 	ctx := context.Background()
 	testTransaction := &entity.Transaction{

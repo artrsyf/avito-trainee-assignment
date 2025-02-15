@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/sirupsen/logrus"
 
 	purchaseEntity "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	mockPurchase "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository/mock_repository"
@@ -27,6 +28,7 @@ func TestUserUsecase_GetInfoById(t *testing.T) {
 		mockPurchaseRepo,
 		mockTransactionRepo,
 		mockUserRepo,
+		logrus.New(),
 	)
 
 	ctx := context.Background()

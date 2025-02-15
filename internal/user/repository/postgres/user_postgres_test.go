@@ -9,6 +9,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
 	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +20,7 @@ func TestUserPostgresRepository_Create(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewUserPostgresRepository(db)
+	repo := NewUserPostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT 1 FROM users WHERE username = \\$1").
@@ -79,7 +80,7 @@ func TestUserPostgresRepository_Update(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewUserPostgresRepository(db)
+	repo := NewUserPostgresRepository(db, logrus.New())
 	mockUOW := &MockUnitOfWork{}
 
 	t.Run("Success", func(t *testing.T) {
@@ -119,7 +120,7 @@ func TestUserPostgresRepository_GetById(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewUserPostgresRepository(db)
+	repo := NewUserPostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT .* FROM users WHERE id = \\$1").
@@ -167,7 +168,7 @@ func TestUserPostgresRepository_GetByUsername(t *testing.T) {
 	}
 	defer db.Close()
 
-	repo := NewUserPostgresRepository(db)
+	repo := NewUserPostgresRepository(db, logrus.New())
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT .* FROM users WHERE username = \\$1").
