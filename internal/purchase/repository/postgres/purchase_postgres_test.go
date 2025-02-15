@@ -54,7 +54,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			PurchaseTypeName: "invalid-type",
 		})
 
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, entity.ErrNotExistedProduct)
 	})
 
 	t.Run("InsertError", func(t *testing.T) {
@@ -108,7 +108,7 @@ func TestPurchasePostgresRepository_GetProductByType(t *testing.T) {
 
 		_, err := repo.GetProductByType(context.Background(), "invalid-type")
 
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, entity.ErrNotExistedProduct)
 	})
 
 	t.Run("DatabaseError", func(t *testing.T) {
