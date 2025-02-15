@@ -1,0 +1,922 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>postgres: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository/postgres/purchase_postgres.go (92.5%)</option>
+				
+				<option value="file1">github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase/usecase.go (94.7%)</option>
+				
+				<option value="file2">github.com/artrsyf/avito-trainee-assignment/internal/session/repository/redis/session_redis.go (92.6%)</option>
+				
+				<option value="file3">github.com/artrsyf/avito-trainee-assignment/internal/session/usecase/usecase.go (73.3%)</option>
+				
+				<option value="file4">github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository/postgres/transaction_postgres.go (95.0%)</option>
+				
+				<option value="file5">github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase/usecase.go (80.4%)</option>
+				
+				<option value="file6">github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres/user_postgres.go (94.9%)</option>
+				
+				<option value="file7">github.com/artrsyf/avito-trainee-assignment/internal/user/usecase/usecase.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package postgres
+
+import (
+        "context"
+        "database/sql"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
+        "github.com/sirupsen/logrus"
+)
+
+type PurchasePostgresRepository struct {
+        DB     *sql.DB
+        logger *logrus.Logger
+}
+
+func NewPurchasePostgresRepository(db *sql.DB, logger *logrus.Logger) *PurchasePostgresRepository <span class="cov8" title="1">{
+        return &amp;PurchasePostgresRepository{
+                DB:     db,
+                logger: logger,
+        }
+}</span>
+
+func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *entity.Purchase) (*model.Purchase, error) <span class="cov8" title="1">{
+        createdPurchase := model.Purchase{}
+        var purchaseTypeID int
+
+        err := repo.DB.
+                QueryRowContext(ctx, "SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&amp;purchaseTypeID)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select not existed product")
+                return nil, entity.ErrNotExistedProduct
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                repo.logger.WithError(err).Error("Failed to select purchase type id")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserID, purchaseTypeID).
+                Scan(&amp;createdPurchase.ID, &amp;createdPurchase.PurchaserID, &amp;createdPurchase.PurchaseTypeID)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to insert purchase")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;createdPurchase, nil</span>
+}
+
+func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, purchaseTypeName string) (*model.PurchaseType, error) <span class="cov8" title="1">{
+        purchaseType := model.PurchaseType{}
+
+        err := repo.DB.
+                QueryRowContext(ctx, "SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
+                Scan(&amp;purchaseType.ID, &amp;purchaseType.Name, &amp;purchaseType.Cost)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select not existed product")
+                return nil, entity.ErrNotExistedProduct
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select product by type")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;purchaseType, nil</span>
+}
+
+func (repo *PurchasePostgresRepository) GetPurchasesByUserID(ctx context.Context, userID uint) (entity.Inventory, error) <span class="cov8" title="1">{
+        rows, err := repo.DB.QueryContext(ctx, `
+                SELECT pt.name, COUNT(p.id) as quantity
+                FROM purchases p
+                JOIN purchase_types pt ON p.purchase_type_id = pt.id
+                WHERE p.purchaser_id = $1
+                GROUP BY pt.name`, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select user inventory")
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                        repo.logger.WithError(err).Warn("Failed to close rows selecting user inventory")
+                }</span>
+        }()
+
+        <span class="cov8" title="1">inventory := entity.Inventory{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                currentPurchaseGroup := entity.PurchaseGroup{}
+                err := rows.Scan(&amp;currentPurchaseGroup.PurchaseTypeName, &amp;currentPurchaseGroup.Quantity)
+                if err != nil </span><span class="cov8" title="1">{
+                        repo.logger.WithError(err).Error("Failed to select purchase group")
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">inventory = append(inventory, currentPurchaseGroup)</span>
+        }
+
+        <span class="cov8" title="1">return inventory, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package usecase
+
+import (
+        "context"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/dto"
+        "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
+        "github.com/sirupsen/logrus"
+
+        purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
+        userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
+        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+)
+
+type PurchaseUsecaseI interface {
+        Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error
+}
+
+type PurchaseUsecase struct {
+        purchaseRepo purchaseRepo.PurchaseRepositoryI
+        userRepo     userRepo.UserRepositoryI
+        uow          uowI.UnitOfWorkI
+        logger       *logrus.Logger
+}
+
+func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *PurchaseUsecase <span class="cov8" title="1">{
+        return &amp;PurchaseUsecase{
+                purchaseRepo: purchaseRepository,
+                userRepo:     userRepository,
+                uow:          uow,
+                logger:       logger,
+        }
+}</span>
+
+func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error <span class="cov8" title="1">{
+        purchaseEntity := dto.PurchaseItemRequestToEntity(purchaseRequest)
+
+        customerModel, err := uc.userRepo.GetByID(ctx, purchaseEntity.PurchaserID)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get customer user by id")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">purchaseType, err := uc.purchaseRepo.GetProductByType(ctx, purchaseEntity.PurchaseTypeName)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get product by type name")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if customerModel.Coins &lt; purchaseType.Cost </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Customer doesn't have enough balance")
+                return entity.ErrNotEnoughBalance
+        }</span>
+
+        <span class="cov8" title="1">customerModel.Coins -= purchaseType.Cost
+
+        err = uc.uow.Begin(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Transaction begin error")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, customerModel)
+        if err != nil </span><span class="cov8" title="1">{
+                rbErr := uc.uow.Rollback()
+                if rbErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(rbErr).Error("Rollback error encountered")
+                }</span>
+                <span class="cov8" title="1">uc.logger.WithError(err).Error("Rollback money transfer due user updating")
+                return err</span>
+        }
+
+        <span class="cov8" title="1">purchaseModel, err := uc.purchaseRepo.Create(ctx, purchaseEntity)
+        if err != nil </span><span class="cov8" title="1">{
+                rbErr := uc.uow.Rollback()
+                if rbErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(rbErr).Error("Rollback error encountered")
+                }</span>
+                <span class="cov8" title="1">uc.logger.WithError(err).Error("Rollback money transfer due purchase creating")
+                return err</span>
+        }
+
+        <span class="cov8" title="1">err = uc.uow.Commit()
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Transaction commit error")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">uc.logger.WithFields(logrus.Fields{
+                "customer_id":     purchaseModel.PurchaserID,
+                "product_type_id": purchaseModel.PurchaseTypeID,
+        }).Info("Successfully purchase product")
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package redis
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "strconv"
+        "time"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
+        "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
+        "github.com/redis/go-redis/v9"
+        "github.com/sirupsen/logrus"
+)
+
+type SessionRedisRepository struct {
+        client *redis.Client
+        logger *logrus.Logger
+}
+
+func NewSessionRedisRepository(client *redis.Client, logger *logrus.Logger) *SessionRedisRepository <span class="cov8" title="1">{
+        return &amp;SessionRedisRepository{
+                client: client,
+                logger: logger,
+        }
+}</span>
+
+func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *entity.Session) (*model.Session, error) <span class="cov8" title="1">{
+        mkey := "sessions:" + strconv.FormatUint(uint64(sessionEntity.UserID), 10)
+
+        sessionModel := dto.SessionEntityToModel(sessionEntity)
+        sessionSerialized, err := json.Marshal(sessionModel)
+        if err != nil </span><span class="cov0" title="0">{
+                repo.logger.WithError(err).Error("Failed to serialize session model")
+                return nil, fmt.Errorf("marshal error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">ttl := time.Until(sessionModel.AccessExpiresAt)
+
+        err = repo.client.SetEx(
+                ctx,
+                mkey,
+                sessionSerialized,
+                ttl,
+        ).Err()
+
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to set session in Redis")
+                return nil, fmt.Errorf("redis error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">repo.logger.WithFields(logrus.Fields{
+                "user_id": sessionEntity.UserID,
+        }).Debug("Created session in Redis")
+
+        return sessionModel, nil</span>
+}
+
+func (repo *SessionRedisRepository) Check(ctx context.Context, userID uint) (*model.Session, error) <span class="cov8" title="1">{
+        mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
+
+        data, err := repo.client.Get(ctx, mkey).Bytes()
+        if err == redis.Nil </span><span class="cov8" title="1">{
+                repo.logger.WithFields(logrus.Fields{
+                        "user_id": userID,
+                }).Debug("Couldn't find user session")
+                return nil, entity.ErrNoSession
+        }</span>
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to get session from Redis")
+                return nil, fmt.Errorf("redis error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">session := &amp;model.Session{}
+        if err := json.Unmarshal(data, session); err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to deserialize session in model")
+                return nil, fmt.Errorf("unmarshal error: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return session, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package usecase
+
+import (
+        "context"
+        "time"
+
+        "github.com/artrsyf/avito-trainee-assignment/config"
+        "github.com/sirupsen/logrus"
+        "golang.org/x/crypto/bcrypt"
+
+        sessionDTO "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
+        sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
+        sessionRepo "github.com/artrsyf/avito-trainee-assignment/internal/session/repository"
+        userDTO "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/dto"
+        userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
+        userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
+)
+
+type SessionUsecaseI interface {
+        LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
+}
+
+type SessionUsecase struct {
+        sessionRepo sessionRepo.SessionRepositoryI
+        userRepo    userRepo.UserRepositoryI
+        userConfig  config.UserConfig
+        logger      *logrus.Logger
+}
+
+func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, cfg config.UserConfig, logger *logrus.Logger) *SessionUsecase <span class="cov8" title="1">{
+        return &amp;SessionUsecase{
+                sessionRepo: sessionRepository,
+                userRepo:    userRepository,
+                userConfig:  cfg,
+                logger:      logger,
+        }
+}</span>
+
+func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) <span class="cov8" title="1">{
+        userModel, err := uc.userRepo.GetByUsername(ctx, authRequest.Username)
+        if err != nil &amp;&amp; err != userEntity.ErrIsNotExist </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get user by username")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if userModel != nil </span><span class="cov8" title="1">{
+                if !checkPassword(authRequest.Password, userModel.PasswordHash) </span><span class="cov8" title="1">{
+                        uc.logger.Error("Failed to authenticate user")
+                        return nil, sessionEntity.ErrWrongCredentials
+                }</span>
+
+                <span class="cov8" title="1">sessionModel, checkErr := uc.sessionRepo.Check(ctx, userModel.ID)
+                if checkErr == sessionEntity.ErrNoSession </span><span class="cov8" title="1">{
+                        return uc.grantSession(ctx, userModel.ID, authRequest)
+                }</span>
+                <span class="cov8" title="1">if checkErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(err).Error("An error occured due checking user session")
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">session := sessionDTO.SessionModelToEntity(sessionModel)
+                return session, nil</span>
+        }
+
+        <span class="cov8" title="1">user, err := userDTO.AuthRequestToEntity(authRequest, uc.userConfig.InitCoinsBalance)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).WithField(
+                        "wrong request", authRequest,
+                ).Error("Failed cast request to entity")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">createdUserModel, err := uc.userRepo.Create(ctx, user)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).WithField(
+                        "broken user", user,
+                ).Error("Failed create new user")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return uc.grantSession(ctx, createdUserModel.ID, authRequest)</span>
+}
+
+func checkPassword(inputPassword, storedPasswordHash string) bool <span class="cov8" title="1">{
+        return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(inputPassword)) == nil
+}</span>
+
+func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) <span class="cov8" title="1">{
+        accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).Error("Failed to parse access token expiration")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">refreshTokenExpiration, err := uc.userConfig.Auth.GetRefreshTokenExpiration()
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).Error("Failed to parse refresh token expiration")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">session, err := sessionDTO.AuthRequestToEntity(
+                authRequest,
+                userID,
+                time.Now().Add(accessTokenExpiration),
+                time.Now().Add(refreshTokenExpiration),
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).WithFields(logrus.Fields{
+                        "user_id":                 userID,
+                        "auth_request":            authRequest,
+                        "access_token_duratuion":  accessTokenExpiration,
+                        "refresh_token_duratuion": refreshTokenExpiration,
+                }).Error("Failed cast session request to entity")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">createdSessionModel, err := uc.sessionRepo.Create(ctx, session)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to create user session")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">uc.logger.WithFields(logrus.Fields{
+                "user_id":  userID,
+                "username": authRequest.Username,
+        }).Info("Granted new session")
+
+        return sessionDTO.SessionModelToEntity(createdSessionModel), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package postgres
+
+import (
+        "context"
+        "database/sql"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+        "github.com/sirupsen/logrus"
+)
+
+type TransactionPostgresRepository struct {
+        DB     *sql.DB
+        logger *logrus.Logger
+}
+
+func NewTransactionPostgresRepository(db *sql.DB, logger *logrus.Logger) *TransactionPostgresRepository <span class="cov8" title="1">{
+        return &amp;TransactionPostgresRepository{
+                DB:     db,
+                logger: logger,
+        }
+}</span>
+
+func (repo *TransactionPostgresRepository) Create(ctx context.Context, transaction *model.Transaction) (*model.Transaction, error) <span class="cov8" title="1">{
+        createdTransaction := model.Transaction{}
+        err := repo.DB.QueryRowContext(ctx, "INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
+                Scan(&amp;createdTransaction.ID, &amp;createdTransaction.SenderUserID, &amp;createdTransaction.ReceiverUserID, &amp;createdTransaction.Amount)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to create transaction")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">repo.logger.WithFields(logrus.Fields{
+                "transaction_id": createdTransaction.ID,
+        }).Debug("Created transaction in Postgres")
+
+        return &amp;createdTransaction, nil</span>
+}
+
+func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Context, userID uint) (entity.ReceivedHistory, error) <span class="cov8" title="1">{
+        rows, err := repo.DB.QueryContext(ctx, `
+                SELECT
+                        u1.username, 
+                        SUM(t.amount)
+                FROM 
+                        transactions t
+                JOIN 
+                        users u1 ON t.sender_user_id = u1.id
+                WHERE 
+                        t.receiver_user_id = $1
+                GROUP BY 
+                        u1.username`, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select received transaction group")
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                        repo.logger.WithError(err).Warn("Failed to close rows selecting received transactions")
+                }</span>
+        }()
+
+        <span class="cov8" title="1">receivedHistory := entity.ReceivedHistory{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                currentReceivedTransactionGroup := entity.ReceivedTransactionGroup{}
+                err := rows.Scan(&amp;currentReceivedTransactionGroup.SenderUsername, &amp;currentReceivedTransactionGroup.Amount)
+                if err != nil </span><span class="cov8" title="1">{
+                        repo.logger.WithError(err).Error("Failed to select received transactions")
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">receivedHistory = append(receivedHistory, currentReceivedTransactionGroup)</span>
+        }
+
+        <span class="cov8" title="1">return receivedHistory, nil</span>
+}
+
+func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, userID uint) (entity.SentHistory, error) <span class="cov8" title="1">{
+        rows, err := repo.DB.QueryContext(ctx, `
+                SELECT 
+                        u1.username,
+                        SUM(t.amount)
+                FROM 
+                        transactions t
+                JOIN 
+                        users u1 ON t.receiver_user_id = u1.id
+                WHERE 
+                        t.sender_user_id = $1
+                GROUP BY 
+                        u1.username`, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to select sent transaction group")
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                if err := rows.Close(); err != nil </span><span class="cov0" title="0">{
+                        repo.logger.WithError(err).Warn("Failed to close rows selecting sent transactions")
+                }</span>
+        }()
+
+        <span class="cov8" title="1">sentHistory := entity.SentHistory{}
+        for rows.Next() </span><span class="cov8" title="1">{
+                currentSentTransactionGroup := entity.SentTransactionGroup{}
+                err := rows.Scan(&amp;currentSentTransactionGroup.ReceiverUsername, &amp;currentSentTransactionGroup.Amount)
+                if err != nil </span><span class="cov8" title="1">{
+                        repo.logger.WithError(err).Error("Failed to select sent transactions")
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">sentHistory = append(sentHistory, currentSentTransactionGroup)</span>
+        }
+
+        <span class="cov8" title="1">return sentHistory, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package usecase
+
+import (
+        "context"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+        "github.com/sirupsen/logrus"
+
+        transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
+        userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
+        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+)
+
+type TransactionUsecaseI interface {
+        Create(ctx context.Context, transactionEntity *entity.Transaction) error
+}
+
+type TransactionUsecase struct {
+        transactionRepo transactionRepo.TransactionRepositoryI
+        userRepo        userRepo.UserRepositoryI
+        uow             uowI.UnitOfWorkI
+        logger          *logrus.Logger
+}
+
+func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *TransactionUsecase <span class="cov8" title="1">{
+        return &amp;TransactionUsecase{
+                transactionRepo: transactionRepository,
+                userRepo:        userRepository,
+                uow:             uow,
+                logger:          logger,
+        }
+}</span>
+
+func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *entity.Transaction) error <span class="cov8" title="1">{
+        senderUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.SenderUsername)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get sender user by username")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">receiverUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.ReceiverUsername)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get receiver user by username")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if senderUserModel.Coins &lt; transactionEntity.Amount </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Sender user doesn't have enough balance")
+                return entity.ErrNotEnoughBalance
+        }</span>
+
+        <span class="cov8" title="1">senderUserModel.Coins -= transactionEntity.Amount
+        receiverUserModel.Coins += transactionEntity.Amount
+
+        err = uc.uow.Begin(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.logger.WithError(err).Error("Transaction begin error")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, senderUserModel)
+        if err != nil </span><span class="cov8" title="1">{
+                rbErr := uc.uow.Rollback()
+                if rbErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(rbErr).Error("Rollback error encountered")
+                }</span>
+                <span class="cov8" title="1">uc.logger.WithError(err).Error("Rollback money transfer due user updating")
+                return err</span>
+        }
+
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, receiverUserModel)
+        if err != nil </span><span class="cov0" title="0">{
+                rbErr := uc.uow.Rollback()
+                if rbErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(rbErr).Error("Rollback error encountered")
+                }</span>
+                <span class="cov0" title="0">uc.logger.WithError(err).Error("Rollback money transfer due user updating")
+                return err</span>
+        }
+
+        <span class="cov8" title="1">transactionModel := &amp;model.Transaction{
+                SenderUserID:   senderUserModel.ID,
+                ReceiverUserID: receiverUserModel.ID,
+                Amount:         transactionEntity.Amount,
+        }
+        _, err = uc.transactionRepo.Create(ctx, transactionModel)
+        if err != nil </span><span class="cov8" title="1">{
+                rbErr := uc.uow.Rollback()
+                if rbErr != nil </span><span class="cov0" title="0">{
+                        uc.logger.WithError(rbErr).Error("Rollback error encountered")
+                }</span>
+                <span class="cov8" title="1">uc.logger.WithError(err).Error("Rollback money transfer due transaction creating")
+                return err</span>
+        }
+
+        <span class="cov8" title="1">err = uc.uow.Commit()
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Transaction commit error")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">uc.logger.WithFields(logrus.Fields{
+                "sender_username":   transactionEntity.SenderUsername,
+                "receiver_username": transactionEntity.ReceiverUsername,
+                "amount":            transactionEntity.Amount,
+        }).Info("Successfully create transaction")
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package postgres
+
+import (
+        "context"
+        "database/sql"
+
+        "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
+        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+        "github.com/sirupsen/logrus"
+)
+
+type UserPostgresRepository struct {
+        DB     *sql.DB
+        logger *logrus.Logger
+}
+
+func NewUserPostgresRepository(db *sql.DB, logger *logrus.Logger) *UserPostgresRepository <span class="cov8" title="1">{
+        return &amp;UserPostgresRepository{
+                DB:     db,
+                logger: logger,
+        }
+}</span>
+
+func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.User) (*model.User, error) <span class="cov8" title="1">{
+        err := repo.DB.
+                QueryRowContext(ctx, "SELECT 1 FROM users WHERE username = $1", user.Username).Scan(new(int))
+        if err == nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Trying to create existing user")
+                return nil, entity.ErrAlreadyCreated
+        }</span>
+
+        <span class="cov8" title="1">if err != sql.ErrNoRows </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("SQL user select error")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">createdUser := model.User{}
+        err = repo.DB.QueryRowContext(ctx, "INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).
+                Scan(&amp;createdUser.ID, &amp;createdUser.Username, &amp;createdUser.Coins, &amp;createdUser.PasswordHash)
+        if err != nil </span><span class="cov0" title="0">{
+                repo.logger.WithError(err).Error("Failed to create user")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">repo.logger.WithFields(logrus.Fields{
+                "user_id": createdUser.ID,
+        }).Debug("Created user in Postgres")
+
+        return &amp;createdUser, nil</span>
+}
+
+func (repo *UserPostgresRepository) Update(ctx context.Context, uow uowI.UnitOfWorkI, user *model.User) error <span class="cov8" title="1">{
+        _, err := uow.ExecContext(ctx, "UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
+        if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Failed to update user")
+                return err
+        }</span>
+
+        <span class="cov8" title="1">repo.logger.WithFields(logrus.Fields{
+                "user_id": user.ID,
+        }).Debug("Updated user in Postgres")
+
+        return nil</span>
+}
+
+func (repo *UserPostgresRepository) GetByID(ctx context.Context, id uint) (*model.User, error) <span class="cov8" title="1">{
+        user := model.User{}
+
+        err := repo.DB.
+                QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE id = $1", id).
+                Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Couldn't find such user by id")
+                return nil, entity.ErrIsNotExist
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("SQL select user by id error")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;user, nil</span>
+}
+
+func (repo *UserPostgresRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) <span class="cov8" title="1">{
+        user := model.User{}
+
+        err := repo.DB.
+                QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE username = $1", username).
+                Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
+        if err == sql.ErrNoRows </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("Couldn't find such user by username")
+                return nil, entity.ErrIsNotExist
+        }</span> else<span class="cov8" title="1"> if err != nil </span><span class="cov8" title="1">{
+                repo.logger.WithError(err).Error("SQL select user by username error")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;user, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package usecase
+
+import (
+        "context"
+
+        purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
+        transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
+        "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/dto"
+        userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
+        "github.com/sirupsen/logrus"
+)
+
+type UserUsecaseI interface {
+        GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error)
+}
+
+type UserUsecase struct {
+        purchaseRepo    purchaseRepo.PurchaseRepositoryI
+        transactionRepo transactionRepo.TransactionRepositoryI
+        userRepo        userRepo.UserRepositoryI
+        logger          *logrus.Logger
+}
+
+func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, logger *logrus.Logger) *UserUsecase <span class="cov8" title="1">{
+        return &amp;UserUsecase{
+                purchaseRepo:    purchaseRepository,
+                transactionRepo: transactionRepository,
+                userRepo:        userRepository,
+                logger:          logger,
+        }
+}</span>
+
+func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) <span class="cov8" title="1">{
+        userInfo, err := uc.userRepo.GetByID(ctx, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get user by id")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">userInventory, err := uc.purchaseRepo.GetPurchasesByUserID(ctx, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get user purchases by user id")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">userSentTransactions, err := uc.transactionRepo.GetSentByUserID(ctx, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get user sent transactions by user id")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">userReceivedTransactions, err := uc.transactionRepo.GetReceivedByUserID(ctx, userID)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.logger.WithError(err).Error("Failed to get user received transactions by user id")
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">getInfoResponse := dto.CreateGetInfoResponse(userInfo.Coins, &amp;userInventory, &amp;userSentTransactions, &amp;userReceivedTransactions)
+
+        uc.logger.WithFields(logrus.Fields{
+                "user_id": userID,
+        }).Info("Successfully got user info")
+
+        return getInfoResponse, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
