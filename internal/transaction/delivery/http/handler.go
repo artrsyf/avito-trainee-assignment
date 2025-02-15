@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/dto"
-	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+	transaction "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
+	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
@@ -72,7 +73,12 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})
 	}
 
-	transactionEntity := &entity.Transaction{
+	if sendCoinsRequest.ReceiverUsername == senderUsername {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"errors": "money transfer to yourself is not allowed"})
+	}
+
+	transactionEntity := &transaction.Transaction{
 		SenderUsername:   senderUsername,
 		ReceiverUsername: sendCoinsRequest.ReceiverUsername,
 		Amount:           sendCoinsRequest.Amount,
@@ -86,10 +92,12 @@ func (h *TransactionHandler) SendCoins(w http.ResponseWriter, r *http.Request) {
 		}).Debug("Transaction create error handling")
 
 		switch err {
-		case entity.ErrNotEnoughBalance:
-			w.WriteHeader(http.StatusUnauthorized)
+		case transaction.ErrNotEnoughBalance:
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
-
+		case userEntity.ErrIsNotExist:
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"errors": "can't find such user"})
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"errors": "internal error"})

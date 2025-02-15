@@ -57,7 +57,7 @@ func TestTransactionScenarios(t *testing.T) {
 		rr := httptest.NewRecorder()
 		cfg.Router.ServeHTTP(rr, req)
 
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 		var response map[string]string
 		json.Unmarshal(rr.Body.Bytes(), &response)
@@ -109,7 +109,8 @@ func TestTransactionScenarios(t *testing.T) {
 		}{
 			{"Short username", "ab", "ReceiverUsername is too short"},
 			{"Long username", "very_long_username_that_exceeds_maximum_allowed_length", "ReceiverUsername is too long"},
-			{"Non-existent user", "non_existent_user", "internal error"},
+			{"Non-existent user", "non_existent_user", "can't find such user"},
+			{"Transfer to yourself", "test_user_transaction", "money transfer to yourself is not allowed"},
 		}
 
 		senderToken := authUser(t, cfg, "test_user_transaction", "password")
@@ -129,11 +130,7 @@ func TestTransactionScenarios(t *testing.T) {
 				rr := httptest.NewRecorder()
 				cfg.Router.ServeHTTP(rr, req)
 
-				if tc.errorMsg == "internal error" {
-					assert.Equal(t, http.StatusInternalServerError, rr.Code)
-				} else {
-					assert.Equal(t, http.StatusBadRequest, rr.Code)
-				}
+				assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 				var response map[string]string
 				json.Unmarshal(rr.Body.Bytes(), &response)

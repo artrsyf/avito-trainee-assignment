@@ -12,9 +12,11 @@ import (
 func TestPurchaseScenarios(t *testing.T) {
 	cfg := setupTestEnvironment()
 
-	// Предполагаем, что у нас есть предопределенные предметы:
-	// "powerbank" - стоимость 200 монет
-	// "pink-hoody" - стоимость 500 монет
+	/*
+		Предполагаем, что у нас есть предопределенные предметы:
+		"powerbank" - стоимость 200 монет
+		"pink-hoody" - стоимость 500 монет
+	*/
 
 	t.Run("Successful item purchase", func(t *testing.T) {
 		token := authUser(t, cfg, "test_buyer", "password")
@@ -51,7 +53,7 @@ func TestPurchaseScenarios(t *testing.T) {
 		rr = httptest.NewRecorder()
 		cfg.Router.ServeHTTP(rr, req)
 
-		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
 		assert.Equal(t, updatedBalance, getBalance(t, cfg, token))
 
 		var response map[string]string

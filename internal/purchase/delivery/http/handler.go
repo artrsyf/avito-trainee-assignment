@@ -66,7 +66,7 @@ func (h *PurchaseHandler) BuyItem(w http.ResponseWriter, r *http.Request) {
 		}).Debug("Purchase create error handling")
 		switch err {
 		case entity.ErrNotEnoughBalance:
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"errors": "not enough balance"})
 		case entity.ErrNotExistedProduct:
 			w.WriteHeader(http.StatusNotFound)
