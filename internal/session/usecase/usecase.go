@@ -17,7 +17,10 @@ import (
 )
 
 type SessionUsecaseI interface {
-	LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
+	LoginOrSignup(
+		ctx context.Context,
+		authRequest *sessionDTO.AuthRequest,
+	) (*sessionEntity.Session, error)
 }
 
 type SessionUsecase struct {
@@ -27,7 +30,12 @@ type SessionUsecase struct {
 	logger      *logrus.Logger
 }
 
-func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, cfg config.UserConfig, logger *logrus.Logger) *SessionUsecase {
+func NewSessionUsecase(
+	sessionRepository sessionRepo.SessionRepositoryI,
+	userRepository userRepo.UserRepositoryI,
+	cfg config.UserConfig,
+	logger *logrus.Logger,
+) *SessionUsecase {
 	return &SessionUsecase{
 		sessionRepo: sessionRepository,
 		userRepo:    userRepository,
@@ -36,7 +44,10 @@ func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRep
 	}
 }
 
-func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
+func (uc *SessionUsecase) LoginOrSignup(
+	ctx context.Context,
+	authRequest *sessionDTO.AuthRequest,
+) (*sessionEntity.Session, error) {
 	userModel, err := uc.userRepo.GetByUsername(ctx, authRequest.Username)
 	if err != nil && err != userEntity.ErrIsNotExist {
 		uc.logger.WithError(err).Error("Failed to get user by username")
@@ -62,7 +73,10 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 		return session, nil
 	}
 
-	user, err := userDTO.AuthRequestToEntity(authRequest, uc.userConfig.InitCoinsBalance)
+	user, err := userDTO.AuthRequestToEntity(
+		authRequest,
+		uc.userConfig.InitCoinsBalance,
+	)
 	if err != nil {
 		uc.logger.WithError(err).WithField(
 			"wrong request", authRequest,
@@ -82,10 +96,17 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 }
 
 func checkPassword(inputPassword, storedPasswordHash string) bool {
-	return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(inputPassword)) == nil
+	return bcrypt.CompareHashAndPassword(
+		[]byte(storedPasswordHash),
+		[]byte(inputPassword),
+	) == nil
 }
 
-func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) {
+func (uc *SessionUsecase) grantSession(
+	ctx context.Context,
+	userID uint,
+	authRequest *sessionDTO.AuthRequest,
+) (*sessionEntity.Session, error) {
 	accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to parse access token expiration")

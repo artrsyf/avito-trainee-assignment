@@ -27,7 +27,12 @@ type GetInfoResponse struct {
 	CoinHistory CoinHistory              `json:"coinHistory"`
 }
 
-func CreateGetInfoResponse(userCoins uint, userInventory *purchaseEntity.Inventory, userSentTransactions *transactionEntity.SentHistory, userReceivedTransactions *transactionEntity.ReceivedHistory) *GetInfoResponse {
+func CreateGetInfoResponse(
+	userCoins uint,
+	userInventory *purchaseEntity.Inventory,
+	userSentTransactions *transactionEntity.SentHistory,
+	userReceivedTransactions *transactionEntity.ReceivedHistory,
+) *GetInfoResponse {
 	return &GetInfoResponse{
 		Coins:     userCoins,
 		Inventory: *userInventory,
@@ -38,8 +43,14 @@ func CreateGetInfoResponse(userCoins uint, userInventory *purchaseEntity.Invento
 	}
 }
 
-func AuthRequestToEntity(authRequest *sessionDTO.AuthRequest, coinsBalance uint) (*entity.User, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(authRequest.Password), bcrypt.DefaultCost)
+func AuthRequestToEntity(
+	authRequest *sessionDTO.AuthRequest,
+	coinsBalance uint,
+) (*entity.User, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(authRequest.Password),
+		bcrypt.DefaultCost,
+	)
 	if err != nil {
 		return nil, err
 	}

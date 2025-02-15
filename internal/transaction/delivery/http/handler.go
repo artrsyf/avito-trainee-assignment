@@ -24,7 +24,11 @@ type TransactionHandler struct {
 	logger        *logrus.Logger
 }
 
-func NewTransactionHandler(transactionUsecase usecase.TransactionUsecaseI, validate *validator.Validate, logger *logrus.Logger) *TransactionHandler {
+func NewTransactionHandler(
+	transactionUsecase usecase.TransactionUsecaseI,
+	validate *validator.Validate,
+	logger *logrus.Logger,
+) *TransactionHandler {
 	return &TransactionHandler{
 		transactionUC: transactionUsecase,
 		logger:        logger,

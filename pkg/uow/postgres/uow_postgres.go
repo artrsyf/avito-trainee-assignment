@@ -31,7 +31,11 @@ func (u *SQLUnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
 	return u.tx.Exec(query, args...)
 }
 
-func (u *SQLUnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (u *SQLUnitOfWork) ExecContext(
+	ctx context.Context,
+	query string,
+	args ...any,
+) (sql.Result, error) {
 	if u.tx == nil {
 		return nil, fmt.Errorf("transaction has not been started")
 	}

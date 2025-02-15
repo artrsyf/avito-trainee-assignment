@@ -22,7 +22,11 @@ type PurchaseHandler struct {
 	logger     *logrus.Logger
 }
 
-func NewPurchaseHandler(purchaseUsecase usecase.PurchaseUsecaseI, validate *validator.Validate, logger *logrus.Logger) *PurchaseHandler {
+func NewPurchaseHandler(
+	purchaseUsecase usecase.PurchaseUsecaseI,
+	validate *validator.Validate,
+	logger *logrus.Logger,
+) *PurchaseHandler {
 	return &PurchaseHandler{
 		purchaseUC: purchaseUsecase,
 		validate:   validate,

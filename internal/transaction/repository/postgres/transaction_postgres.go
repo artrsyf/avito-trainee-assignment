@@ -14,17 +14,33 @@ type TransactionPostgresRepository struct {
 	logger *logrus.Logger
 }
 
-func NewTransactionPostgresRepository(db *sql.DB, logger *logrus.Logger) *TransactionPostgresRepository {
+func NewTransactionPostgresRepository(
+	db *sql.DB,
+	logger *logrus.Logger,
+) *TransactionPostgresRepository {
 	return &TransactionPostgresRepository{
 		DB:     db,
 		logger: logger,
 	}
 }
 
-func (repo *TransactionPostgresRepository) Create(ctx context.Context, transaction *model.Transaction) (*model.Transaction, error) {
+func (repo *TransactionPostgresRepository) Create(
+	ctx context.Context,
+	transaction *model.Transaction,
+) (*model.Transaction, error) {
 	createdTransaction := model.Transaction{}
-	err := repo.DB.QueryRowContext(ctx, "INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
-		Scan(&createdTransaction.ID, &createdTransaction.SenderUserID, &createdTransaction.ReceiverUserID, &createdTransaction.Amount)
+	err := repo.DB.QueryRowContext(
+		ctx,
+		`INSERT INTO transactions (sender_user_id, receiver_user_id, amount) 
+		VALUES ($1, $2, $3) 
+		RETURNING id, sender_user_id, receiver_user_id, amount`,
+		transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount,
+	).Scan(
+		&createdTransaction.ID,
+		&createdTransaction.SenderUserID,
+		&createdTransaction.ReceiverUserID,
+		&createdTransaction.Amount,
+	)
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to create transaction")
 		return nil, err
@@ -37,19 +53,19 @@ func (repo *TransactionPostgresRepository) Create(ctx context.Context, transacti
 	return &createdTransaction, nil
 }
 
-func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Context, userID uint) (entity.ReceivedHistory, error) {
-	rows, err := repo.DB.QueryContext(ctx, `
-		SELECT
-			u1.username, 
-			SUM(t.amount)
-		FROM 
-			transactions t
-		JOIN 
-			users u1 ON t.sender_user_id = u1.id
-		WHERE 
-			t.receiver_user_id = $1
-		GROUP BY 
-			u1.username`, userID)
+func (repo *TransactionPostgresRepository) GetReceivedByUserID(
+	ctx context.Context,
+	userID uint,
+) (entity.ReceivedHistory, error) {
+	rows, err := repo.DB.QueryContext(
+		ctx,
+		`SELECT u1.username, SUM(t.amount)
+		FROM transactions t
+		JOIN users u1 ON t.sender_user_id = u1.id
+		WHERE t.receiver_user_id = $1
+		GROUP BY u1.username`,
+		userID,
+	)
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to select received transaction group")
 		return nil, err
@@ -63,7 +79,10 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Conte
 	receivedHistory := entity.ReceivedHistory{}
 	for rows.Next() {
 		currentReceivedTransactionGroup := entity.ReceivedTransactionGroup{}
-		err := rows.Scan(&currentReceivedTransactionGroup.SenderUsername, &currentReceivedTransactionGroup.Amount)
+		err := rows.Scan(
+			&currentReceivedTransactionGroup.SenderUsername,
+			&currentReceivedTransactionGroup.Amount,
+		)
 		if err != nil {
 			repo.logger.WithError(err).Error("Failed to select received transactions")
 			return nil, err
@@ -75,19 +94,19 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Conte
 	return receivedHistory, nil
 }
 
-func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, userID uint) (entity.SentHistory, error) {
-	rows, err := repo.DB.QueryContext(ctx, `
-		SELECT 
-			u1.username,
-			SUM(t.amount)
-		FROM 
-			transactions t
-		JOIN 
-			users u1 ON t.receiver_user_id = u1.id
-		WHERE 
-			t.sender_user_id = $1
-		GROUP BY 
-			u1.username`, userID)
+func (repo *TransactionPostgresRepository) GetSentByUserID(
+	ctx context.Context,
+	userID uint,
+) (entity.SentHistory, error) {
+	rows, err := repo.DB.QueryContext(
+		ctx,
+		`SELECT u1.username, SUM(t.amount)
+		FROM transactions t
+		JOIN users u1 ON t.receiver_user_id = u1.id
+		WHERE t.sender_user_id = $1
+		GROUP BY u1.username`,
+		userID,
+	)
 	if err != nil {
 		repo.logger.WithError(err).Error("Failed to select sent transaction group")
 		return nil, err
@@ -101,7 +120,10 @@ func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, 
 	sentHistory := entity.SentHistory{}
 	for rows.Next() {
 		currentSentTransactionGroup := entity.SentTransactionGroup{}
-		err := rows.Scan(&currentSentTransactionGroup.ReceiverUsername, &currentSentTransactionGroup.Amount)
+		err := rows.Scan(
+			&currentSentTransactionGroup.ReceiverUsername,
+			&currentSentTransactionGroup.Amount,
+		)
 		if err != nil {
 			repo.logger.WithError(err).Error("Failed to select sent transactions")
 			return nil, err

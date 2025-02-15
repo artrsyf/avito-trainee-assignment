@@ -23,7 +23,12 @@ type TransactionUsecase struct {
 	logger          *logrus.Logger
 }
 
-func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *TransactionUsecase {
+func NewTransactionUsecase(
+	transactionRepository transactionRepo.TransactionRepositoryI,
+	userRepository userRepo.UserRepositoryI,
+	uow uowI.UnitOfWorkI,
+	logger *logrus.Logger,
+) *TransactionUsecase {
 	return &TransactionUsecase{
 		transactionRepo: transactionRepository,
 		userRepo:        userRepository,
@@ -32,14 +37,23 @@ func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepo
 	}
 }
 
-func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *entity.Transaction) error {
-	senderUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.SenderUsername)
+func (uc *TransactionUsecase) Create(
+	ctx context.Context,
+	transactionEntity *entity.Transaction,
+) error {
+	senderUserModel, err := uc.userRepo.GetByUsername(
+		ctx,
+		transactionEntity.SenderUsername,
+	)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get sender user by username")
 		return err
 	}
 
-	receiverUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.ReceiverUsername)
+	receiverUserModel, err := uc.userRepo.GetByUsername(
+		ctx,
+		transactionEntity.ReceiverUsername,
+	)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get receiver user by username")
 		return err

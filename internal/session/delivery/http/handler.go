@@ -24,7 +24,11 @@ type SessionHandler struct {
 	logger    *logrus.Logger
 }
 
-func NewSessionHandler(sessionUsecase usecase.SessionUsecaseI, validate *validator.Validate, logger *logrus.Logger) *SessionHandler {
+func NewSessionHandler(
+	sessionUsecase usecase.SessionUsecaseI,
+	validate *validator.Validate,
+	logger *logrus.Logger,
+) *SessionHandler {
 	return &SessionHandler{
 		sessionUC: sessionUsecase,
 		validate:  validate,
@@ -123,7 +127,11 @@ func (h *SessionHandler) Auth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func setSessionCookies(w http.ResponseWriter, session *sessionEntity.Session, logger *logrus.Logger) {
+func setSessionCookies(
+	w http.ResponseWriter,
+	session *sessionEntity.Session,
+	logger *logrus.Logger,
+) {
 	cookies := []*http.Cookie{
 		{
 			Name:     "access_token",

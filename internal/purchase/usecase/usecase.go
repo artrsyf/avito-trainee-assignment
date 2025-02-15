@@ -23,7 +23,12 @@ type PurchaseUsecase struct {
 	logger       *logrus.Logger
 }
 
-func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *PurchaseUsecase {
+func NewPurchaseUsecase(
+	purchaseRepository purchaseRepo.PurchaseRepositoryI,
+	userRepository userRepo.UserRepositoryI,
+	uow uowI.UnitOfWorkI,
+	logger *logrus.Logger,
+) *PurchaseUsecase {
 	return &PurchaseUsecase{
 		purchaseRepo: purchaseRepository,
 		userRepo:     userRepository,
@@ -32,7 +37,10 @@ func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, use
 	}
 }
 
-func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error {
+func (uc *PurchaseUsecase) Create(
+	ctx context.Context,
+	purchaseRequest *dto.PurchaseItemRequest,
+) error {
 	purchaseEntity := dto.PurchaseItemRequestToEntity(purchaseRequest)
 
 	customerModel, err := uc.userRepo.GetByID(ctx, purchaseEntity.PurchaserID)

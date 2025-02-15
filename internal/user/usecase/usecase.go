@@ -21,7 +21,12 @@ type UserUsecase struct {
 	logger          *logrus.Logger
 }
 
-func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, logger *logrus.Logger) *UserUsecase {
+func NewUserUsecase(
+	purchaseRepository purchaseRepo.PurchaseRepositoryI,
+	transactionRepository transactionRepo.TransactionRepositoryI,
+	userRepository userRepo.UserRepositoryI,
+	logger *logrus.Logger,
+) *UserUsecase {
 	return &UserUsecase{
 		purchaseRepo:    purchaseRepository,
 		transactionRepo: transactionRepository,
@@ -30,7 +35,10 @@ func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transac
 	}
 }
 
-func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) {
+func (uc *UserUsecase) GetInfoByID(
+	ctx context.Context,
+	userID uint,
+) (*dto.GetInfoResponse, error) {
 	userInfo, err := uc.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		uc.logger.WithError(err).Error("Failed to get user by id")
@@ -55,7 +63,12 @@ func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetIn
 		return nil, err
 	}
 
-	getInfoResponse := dto.CreateGetInfoResponse(userInfo.Coins, &userInventory, &userSentTransactions, &userReceivedTransactions)
+	getInfoResponse := dto.CreateGetInfoResponse(
+		userInfo.Coins,
+		&userInventory,
+		&userSentTransactions,
+		&userReceivedTransactions,
+	)
 
 	uc.logger.WithFields(logrus.Fields{
 		"user_id": userID,

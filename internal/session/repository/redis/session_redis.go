@@ -19,14 +19,20 @@ type SessionRedisRepository struct {
 	logger *logrus.Logger
 }
 
-func NewSessionRedisRepository(client *redis.Client, logger *logrus.Logger) *SessionRedisRepository {
+func NewSessionRedisRepository(
+	client *redis.Client,
+	logger *logrus.Logger,
+) *SessionRedisRepository {
 	return &SessionRedisRepository{
 		client: client,
 		logger: logger,
 	}
 }
 
-func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *entity.Session) (*model.Session, error) {
+func (repo *SessionRedisRepository) Create(
+	ctx context.Context,
+	sessionEntity *entity.Session,
+) (*model.Session, error) {
 	mkey := "sessions:" + strconv.FormatUint(uint64(sessionEntity.UserID), 10)
 
 	sessionModel := dto.SessionEntityToModel(sessionEntity)
@@ -57,7 +63,10 @@ func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *e
 	return sessionModel, nil
 }
 
-func (repo *SessionRedisRepository) Check(ctx context.Context, userID uint) (*model.Session, error) {
+func (repo *SessionRedisRepository) Check(
+	ctx context.Context,
+	userID uint,
+) (*model.Session, error) {
 	mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
 
 	data, err := repo.client.Get(ctx, mkey).Bytes()
