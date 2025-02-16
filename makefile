@@ -52,5 +52,16 @@ lint:
 
 help:
 	@echo "Доступные команды:"
+	@echo "  run                - Запустить контейнеры"
+	@echo "  rebuild            - Пересобрать контейнеры и запустить"
+	@echo "  down               - Остановить контейнеры"
+	@echo "  drop               - Остановить контейнеры и удалить тома"
+	@echo "  unit_test          - Запустить unit-тесты с покрытием кода"
+	@echo "  unit_cover         - Сгенерировать HTML-отчет по покрытию тестами"
+	@echo "  integration_test   - Запустить интеграционные тесты в контейнерах"
+	@echo "  e2e_test           - Запустить end-to-end тесты"
+	@echo "  load_test          - Запустить нагрузочное тестирование с K6"
+	@echo "  lint               - Запустить линтер golangci-lint"
+	@echo "  help               - Показать доступные команды"
 
-.PHONY: run rebuild down drop unit_test unit_cover integration_test e2e_test help
+.PHONY: run rebuild down drop unit_test unit_cover integration_test e2e_test load_test lint help
