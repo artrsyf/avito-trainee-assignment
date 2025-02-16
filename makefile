@@ -50,17 +50,17 @@ lint:
 	golangci-lint run
 
 help:
-	@echo "Доступные команды:"
-	@echo "  run                - Запустить контейнеры"
-	@echo "  rebuild            - Пересобрать контейнеры и запустить"
-	@echo "  down               - Остановить контейнеры"
-	@echo "  drop               - Остановить контейнеры и удалить тома"
-	@echo "  unit_test          - Запустить unit-тесты с покрытием кода"
-	@echo "  unit_cover         - Сгенерировать HTML-отчет по покрытию тестами"
-	@echo "  integration_test   - Запустить интеграционные тесты в контейнерах"
-	@echo "  e2e_test           - Запустить end-to-end тесты"
-	@echo "  load_test          - Запустить нагрузочное тестирование с K6"
-	@echo "  lint               - Запустить линтер golangci-lint"
-	@echo "  help               - Показать доступные команды"
+	@echo "Available commands:"
+	@echo "  run                - Start containers"
+	@echo "  rebuild            - Rebuild and start containers"
+	@echo "  down               - Stop containers"
+	@echo "  drop               - Stop containers and remove volumes"
+	@echo "  unit_test          - Run unit tests with coverage"
+	@echo "  unit_cover         - Generate HTML coverage report"
+	@echo "  integration_test   - Run integration tests in containers"
+	@echo "  e2e_test           - Run end-to-end tests"
+	@echo "  load_test          - Run load testing with K6"
+	@echo "  lint               - Run golangci-lint"
+	@echo "  help               - Show available commands"
 
 .PHONY: run rebuild down drop unit_test unit_cover integration_test e2e_test load_test lint help
