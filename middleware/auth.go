@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
+
+	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 )
 
 type contextKey string

@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
-	"github.com/redis/go-redis/v9"
-	"github.com/sirupsen/logrus"
 )
 
 type SessionRedisRepository struct {

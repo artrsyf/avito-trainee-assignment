@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
-	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 	"github.com/go-redis/redismock/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
+	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 )
 
 func TestSessionRedisRepository_Create(t *testing.T) {

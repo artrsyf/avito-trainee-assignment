@@ -1,14 +1,13 @@
 package dto
 
 import (
-	sessionDTO "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
-	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
-	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
+	"golang.org/x/crypto/bcrypt"
 
 	purchaseEntity "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
+	sessionDTO "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	transactionEntity "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
-
-	"golang.org/x/crypto/bcrypt"
+	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
+	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
 )
 
 type SendCoinsRequest struct {

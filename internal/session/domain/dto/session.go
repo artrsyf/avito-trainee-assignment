@@ -6,10 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
-	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
+	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
 )
 
 type AuthRequest struct {

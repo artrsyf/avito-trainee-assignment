@@ -7,10 +7,11 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
 	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
-	"github.com/sirupsen/logrus"
 )
 
 type UserHandler struct {

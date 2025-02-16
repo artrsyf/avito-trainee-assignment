@@ -9,13 +9,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
 	sessionEntity "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/session/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 )
 
 type SessionHandler struct {

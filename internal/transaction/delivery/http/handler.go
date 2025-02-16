@@ -8,14 +8,15 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/dto"
 	transaction "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	userEntity "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/middleware"
 	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
-	"github.com/go-playground/validator/v10"
-	"github.com/sirupsen/logrus"
 )
 
 type TransactionHandler struct {

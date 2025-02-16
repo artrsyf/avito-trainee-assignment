@@ -3,10 +3,10 @@ package usecase
 import (
 	"context"
 
-	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
-	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
 	"github.com/sirupsen/logrus"
 
+	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
 	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"

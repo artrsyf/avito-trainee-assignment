@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
 	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
-	"github.com/sirupsen/logrus"
 )
 
 type UserPostgresRepository struct {

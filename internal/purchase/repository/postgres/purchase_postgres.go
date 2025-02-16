@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
-	"github.com/sirupsen/logrus"
 )
 
 type PurchasePostgresRepository struct {

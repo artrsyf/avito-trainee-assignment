@@ -3,8 +3,9 @@ package dto
 import (
 	"errors"
 
-	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/go-playground/validator/v10"
+
+	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 )
 
 type PurchaseItemRequest struct {

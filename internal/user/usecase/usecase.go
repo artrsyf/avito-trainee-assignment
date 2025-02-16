@@ -3,11 +3,12 @@ package usecase
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
+
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/dto"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/sirupsen/logrus"
 )
 
 type UserUsecaseI interface {

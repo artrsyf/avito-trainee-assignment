@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
 	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUserPostgresRepository_Create(t *testing.T) {
