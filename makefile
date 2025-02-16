@@ -38,6 +38,15 @@ e2e_test:
 	go test -v ./tests/e2e/
 	docker-compose -f $(COMPOSE_TEST_FILE) down --volumes --remove-orphans
 
+load_test:
+	docker-compose -f $(COMPOSE_DEV_FILE) up --build -d
+	docker run -i --network=host \
+		-v C:\projects\avito-trainee-assignment\tests\load:/app \
+		loadimpact/k6 run /app/stress_test.js \
+		-e API_URL=http://host.docker.internal:8080 \
+		-e K6_OUT=influxdb=http://localhost:8086/k6
+	docker-compose -f $(COMPOSE_DEV_FILE) down --volumes --remove-orphans
+
 lint: 
 	golangci-lint run
 
