@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/artrsyf/avito-trainee-assignment/config"
-	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	"github.com/artrsyf/avito-trainee-assignment/internal/middleware"
 
 	purchaseRepository "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository/postgres"
 	sessionRepository "github.com/artrsyf/avito-trainee-assignment/internal/session/repository/redis"

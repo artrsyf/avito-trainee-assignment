@@ -10,10 +10,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
+	"github.com/artrsyf/avito-trainee-assignment/internal/middleware"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/dto"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase"
-	"github.com/artrsyf/avito-trainee-assignment/middleware"
 	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 )
 

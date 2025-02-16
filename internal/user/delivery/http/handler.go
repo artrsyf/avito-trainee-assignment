@@ -9,8 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/artrsyf/avito-trainee-assignment/internal/middleware"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/usecase"
-	"github.com/artrsyf/avito-trainee-assignment/middleware"
 	JSONResponse "github.com/artrsyf/avito-trainee-assignment/pkg/json_response"
 )
 

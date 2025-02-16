@@ -38,7 +38,7 @@ import (
 	transactionDelivery "github.com/artrsyf/avito-trainee-assignment/internal/transaction/delivery/http"
 	userDelivery "github.com/artrsyf/avito-trainee-assignment/internal/user/delivery/http"
 
-	"github.com/artrsyf/avito-trainee-assignment/middleware"
+	"github.com/artrsyf/avito-trainee-assignment/internal/middleware"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
