@@ -43,8 +43,7 @@ load_test:
 	docker run -i --network=host \
 		-v C:\projects\avito-trainee-assignment\tests\load:/app \
 		loadimpact/k6 run /app/stress_test.js \
-		-e API_URL=http://host.docker.internal:8080 \
-		-e K6_OUT=influxdb=http://localhost:8086/k6
+		-e API_URL=http://host.docker.internal:8080
 	docker-compose -f $(COMPOSE_DEV_FILE) down --volumes --remove-orphans
 
 lint: 

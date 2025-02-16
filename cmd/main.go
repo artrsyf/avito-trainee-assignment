@@ -73,9 +73,9 @@ func main() {
 		logger.WithError(err).Fatal("Ошибка при подключении к БД")
 	}
 
-	postgresConnect.SetMaxOpenConns(25)
-	postgresConnect.SetMaxIdleConns(5)
-	postgresConnect.SetConnMaxLifetime(5 * time.Minute)
+	postgresConnect.SetMaxOpenConns(50)
+	postgresConnect.SetMaxIdleConns(15)
+	postgresConnect.SetConnMaxLifetime(10 * time.Minute)
 
 	redisAddr := fmt.Sprintf("%s:%s",
 		os.Getenv("REDIS_HOST"),
