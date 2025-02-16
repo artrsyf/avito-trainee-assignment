@@ -56,7 +56,7 @@ func (uc *SessionUsecase) LoginOrSignup(
 
 	if userModel != nil {
 		if !checkPassword(authRequest.Password, userModel.PasswordHash) {
-			uc.logger.Error("Failed to authenticate user")
+			uc.logger.Info("Failed to authenticate user")
 			return nil, sessionEntity.ErrWrongCredentials
 		}
 
@@ -65,8 +65,8 @@ func (uc *SessionUsecase) LoginOrSignup(
 			return uc.grantSession(ctx, userModel.ID, authRequest)
 		}
 		if checkErr != nil {
-			uc.logger.WithError(err).Error("An error occured due checking user session")
-			return nil, err
+			uc.logger.WithError(checkErr).Error("An error occured due checking user session")
+			return nil, checkErr
 		}
 
 		session := sessionDTO.SessionModelToEntity(sessionModel)
