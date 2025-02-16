@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -53,7 +57,7 @@ func main() {
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		logger.WithError(err).Fatal("Ошибка при закгрузке конфиг файла")
+		logger.WithError(err).Fatal("Ошибка при загрузке конфиг файла")
 	}
 
 	postgresDSN := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -69,6 +73,10 @@ func main() {
 		logger.WithError(err).Fatal("Ошибка при подключении к БД")
 	}
 
+	postgresConnect.SetMaxOpenConns(25)
+	postgresConnect.SetMaxIdleConns(5)
+	postgresConnect.SetConnMaxLifetime(5 * time.Minute)
+
 	redisAddr := fmt.Sprintf("%s:%s",
 		os.Getenv("REDIS_HOST"),
 		os.Getenv("REDIS_PORT"),
@@ -82,16 +90,6 @@ func main() {
 		Addr: redisAddr,
 		DB:   redisDB,
 	})
-
-	defer func() {
-		if err = postgresConnect.Close(); err != nil {
-			logger.WithError(err).Fatal("Ошибка при закрытии коннекта с Postgres")
-		}
-
-		if err := redisClient.Close(); err != nil {
-			logger.WithError(err).Fatal("Ошибка при закрытии коннекта с Redis")
-		}
-	}()
 
 	router := mux.NewRouter()
 
@@ -148,8 +146,37 @@ func main() {
 		middleware.ValidateJWTToken(
 			http.HandlerFunc(userHandler.GetInfo), logger)).Methods("GET")
 
-	logger.WithField("port", 8080).Info("Сервер запущен")
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", 8080), router); err != nil {
-		logger.WithError(err).Fatal("Ошибка запуска сервера")
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%d", 8080),
+		Handler: router,
 	}
+
+	go func() {
+		logger.WithField("port", 8080).Info("Сервер запущен")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.WithError(err).Fatal("Ошибка запуска сервера")
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Info("Завершение работы сервера...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.WithError(err).Fatal("Ошибка при остановке сервера")
+	}
+
+	if err := postgresConnect.Close(); err != nil {
+		logger.WithError(err).Error("Ошибка при закрытии подключения к PostgreSQL")
+	}
+
+	if err := redisClient.Close(); err != nil {
+		logger.WithError(err).Error("Ошибка при закрытии подключения к Redis")
+	}
+
+	logger.Info("Сервер успешно остановлен")
 }
