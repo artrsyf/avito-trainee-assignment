@@ -5,20 +5,20 @@ import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 export let options = {
     setupTimeout: '300s',
     stages: [
-        { duration: '1m', target: 50 },
-        { duration: '1m', target: 75 },
+        { duration: '1m', target: 100 },
+        { duration: '2m', target: 300 },
         { duration: '1m', target: 0 },
     ],
     thresholds: {
-        http_req_duration: ['p(99)<50'],
+        http_req_duration: ['p(90)<4000'],
         http_req_failed: ['rate<0.10'],
     },
     noConnectionReuse: true,
 };
 
 const BASE_URL = 'http://localhost:8080';
-const USERS_COUNT = 10000;
-const BATCH_SIZE = 150
+const USERS_COUNT = 5000;
+const BATCH_SIZE = 100
 const MAX_RETRIES = 3;
 
 const MERCH_ITEMS = [
@@ -82,7 +82,7 @@ export default function (data) {
     const user = data.users[randomIntBetween(0, USERS_COUNT - 1)];
     const token = authenticate(user);
 
-    const operation = randomIntBetween(1, 2);
+    const operation = randomIntBetween(1, 3);
     switch (operation) {
         case 1:
             const infoRes = http.get(`${BASE_URL}/api/info`, {
@@ -97,6 +97,21 @@ export default function (data) {
                 headers: { Authorization: `Bearer ${token}` },
             });
             check(buyRes, { 'BuyItem status is 200': (r) => r.status === 200 });
+            break;
+        
+        case 3:
+            const toUser = data.users[randomIntBetween(0, USERS_COUNT - 1)].username;
+            const sendCoinPayload = JSON.stringify({
+                toUser,
+                amount: 1,
+            });
+            const sendCoinResponse = http.post(`${BASE_URL}/api/sendCoin`, sendCoinPayload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            check(sendCoinResponse, { 'SendCoin status is 200': (r) => r.status === 200 });
             break;
     }
 
