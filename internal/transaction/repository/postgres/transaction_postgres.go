@@ -8,7 +8,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionPostgresRepository struct {
@@ -28,7 +28,7 @@ func NewTransactionPostgresRepository(
 
 func (repo *TransactionPostgresRepository) Create(
 	ctx context.Context,
-	uow uow.Executor,
+	uow uowI.Executor,
 	transaction *model.Transaction,
 ) (*model.Transaction, error) {
 	createdTransaction := model.Transaction{}

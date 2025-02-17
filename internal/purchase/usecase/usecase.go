@@ -9,7 +9,7 @@ import (
 
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchaseUsecaseI interface {
@@ -19,14 +19,14 @@ type PurchaseUsecaseI interface {
 type PurchaseUsecase struct {
 	purchaseRepo purchaseRepo.PurchaseRepositoryI
 	userRepo     userRepo.UserRepositoryI
-	uowFactory   uow.Factory
+	uowFactory   uowI.Factory
 	logger       *logrus.Logger
 }
 
 func NewPurchaseUsecase(
 	purchaseRepository purchaseRepo.PurchaseRepositoryI,
 	userRepository userRepo.UserRepositoryI,
-	uowFactory uow.Factory,
+	uowFactory uowI.Factory,
 	logger *logrus.Logger,
 ) *PurchaseUsecase {
 	return &PurchaseUsecase{

@@ -8,7 +8,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchasePostgresRepository struct {
@@ -25,7 +25,7 @@ func NewPurchasePostgresRepository(db *sql.DB, logger *logrus.Logger) *PurchaseP
 
 func (repo *PurchasePostgresRepository) Create(
 	ctx context.Context,
-	uow uow.Executor,
+	uow uowI.Executor,
 	purchase *entity.Purchase,
 ) (*model.Purchase, error) {
 	createdPurchase := model.Purchase{}

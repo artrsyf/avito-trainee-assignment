@@ -9,7 +9,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionUsecaseI interface {
@@ -19,14 +19,14 @@ type TransactionUsecaseI interface {
 type TransactionUsecase struct {
 	transactionRepo transactionRepo.TransactionRepositoryI
 	userRepo        userRepo.UserRepositoryI
-	uowFactory      uow.Factory
+	uowFactory      uowI.Factory
 	logger          *logrus.Logger
 }
 
 func NewTransactionUsecase(
 	transactionRepository transactionRepo.TransactionRepositoryI,
 	userRepository userRepo.UserRepositoryI,
-	uowFactory uow.Factory,
+	uowFactory uowI.Factory,
 	logger *logrus.Logger,
 ) *TransactionUsecase {
 	return &TransactionUsecase{

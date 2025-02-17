@@ -8,7 +8,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
-type PostgresUnitOfWork struct {
+type UnitOfWork struct {
 	db *sql.DB
 	tx *sql.Tx
 }
@@ -22,10 +22,10 @@ type factory struct {
 }
 
 func (f *factory) NewUnitOfWork() uow.UnitOfWork {
-	return &PostgresUnitOfWork{db: f.db}
+	return &UnitOfWork{db: f.db}
 }
 
-func (u *PostgresUnitOfWork) Begin(ctx context.Context) error {
+func (u *UnitOfWork) Begin(ctx context.Context) error {
 	if u.tx != nil {
 		return fmt.Errorf("transaction already started")
 	}
@@ -38,7 +38,7 @@ func (u *PostgresUnitOfWork) Begin(ctx context.Context) error {
 	return nil
 }
 
-func (u *PostgresUnitOfWork) Commit() error {
+func (u *UnitOfWork) Commit() error {
 	defer func() { u.tx = nil }()
 	if u.tx == nil {
 		return fmt.Errorf("transaction not started")
@@ -46,7 +46,7 @@ func (u *PostgresUnitOfWork) Commit() error {
 	return u.tx.Commit()
 }
 
-func (u *PostgresUnitOfWork) Rollback() error {
+func (u *UnitOfWork) Rollback() error {
 	defer func() { u.tx = nil }()
 	if u.tx == nil {
 		return fmt.Errorf("transaction not started")
@@ -55,21 +55,21 @@ func (u *PostgresUnitOfWork) Rollback() error {
 }
 
 // Реализация методов Executor
-func (u *PostgresUnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
+func (u *UnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
 	if u.tx == nil {
 		return nil, fmt.Errorf("transaction not started")
 	}
 	return u.tx.Exec(query, args...)
 }
 
-func (u *PostgresUnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (u *UnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if u.tx == nil {
 		return nil, fmt.Errorf("transaction not started")
 	}
 	return u.tx.ExecContext(ctx, query, args...)
 }
 
-func (u *PostgresUnitOfWork) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+func (u *UnitOfWork) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	if u.tx == nil {
 		return nil
 	}
