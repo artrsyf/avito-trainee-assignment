@@ -9,7 +9,7 @@ import (
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionUsecaseI interface {
@@ -19,20 +19,20 @@ type TransactionUsecaseI interface {
 type TransactionUsecase struct {
 	transactionRepo transactionRepo.TransactionRepositoryI
 	userRepo        userRepo.UserRepositoryI
-	uow             uowI.UnitOfWorkI
+	uowFactory      uow.Factory
 	logger          *logrus.Logger
 }
 
 func NewTransactionUsecase(
 	transactionRepository transactionRepo.TransactionRepositoryI,
 	userRepository userRepo.UserRepositoryI,
-	uow uowI.UnitOfWorkI,
+	uowFactory uow.Factory,
 	logger *logrus.Logger,
 ) *TransactionUsecase {
 	return &TransactionUsecase{
 		transactionRepo: transactionRepository,
 		userRepo:        userRepository,
-		uow:             uow,
+		uowFactory:      uowFactory,
 		logger:          logger,
 	}
 }
@@ -67,15 +67,17 @@ func (uc *TransactionUsecase) Create(
 	senderUserModel.Coins -= transactionEntity.Amount
 	receiverUserModel.Coins += transactionEntity.Amount
 
-	err = uc.uow.Begin(ctx)
+	uow := uc.uowFactory.NewUnitOfWork()
+
+	err = uow.Begin(ctx)
 	if err != nil {
 		uc.logger.WithError(err).Error("Transaction begin error")
 		return err
 	}
 
-	err = uc.userRepo.Update(ctx, uc.uow, senderUserModel)
+	err = uc.userRepo.Update(ctx, uow, senderUserModel)
 	if err != nil {
-		rbErr := uc.uow.Rollback()
+		rbErr := uow.Rollback()
 		if rbErr != nil {
 			uc.logger.WithError(rbErr).Error("Rollback error encountered")
 		}
@@ -83,9 +85,9 @@ func (uc *TransactionUsecase) Create(
 		return err
 	}
 
-	err = uc.userRepo.Update(ctx, uc.uow, receiverUserModel)
+	err = uc.userRepo.Update(ctx, uow, receiverUserModel)
 	if err != nil {
-		rbErr := uc.uow.Rollback()
+		rbErr := uow.Rollback()
 		if rbErr != nil {
 			uc.logger.WithError(rbErr).Error("Rollback error encountered")
 		}
@@ -98,9 +100,9 @@ func (uc *TransactionUsecase) Create(
 		ReceiverUserID: receiverUserModel.ID,
 		Amount:         transactionEntity.Amount,
 	}
-	_, err = uc.transactionRepo.Create(ctx, transactionModel)
+	_, err = uc.transactionRepo.Create(ctx, uow, transactionModel)
 	if err != nil {
-		rbErr := uc.uow.Rollback()
+		rbErr := uow.Rollback()
 		if rbErr != nil {
 			uc.logger.WithError(rbErr).Error("Rollback error encountered")
 		}
@@ -108,9 +110,9 @@ func (uc *TransactionUsecase) Create(
 		return err
 	}
 
-	err = uc.uow.Commit()
+	err = uow.Commit()
 	if err != nil {
-		uc.logger.WithError(err).Error("Transaction commit error")
+		uc.logger.WithError(err).Error("Transaction commit error due transfers creating")
 		return err
 	}
 

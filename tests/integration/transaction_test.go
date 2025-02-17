@@ -11,6 +11,7 @@ import (
 	transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository/postgres"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres"
+	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow/postgres"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -19,9 +20,9 @@ import (
 func TestTransactionUsecase_Integration(t *testing.T) {
 	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
 	transactionRepo := transactionRepo.NewTransactionPostgresRepository(DB, logrus.New())
-	uow := uow.NewSQLUnitOfWork(DB)
+	uowFactory := uow.NewFactory(DB)
 
-	uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow, logrus.New())
+	uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uowFactory, logrus.New())
 	ctx := context.Background()
 
 	t.Run("successful transaction", func(t *testing.T) {
@@ -109,8 +110,8 @@ func TestTransactionUsecase_Integration(t *testing.T) {
 			Amount:           300,
 		}
 
-		uow := &FaultyUOW{db: DB, failOn: 2}
-		uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, uow, logrus.New())
+		faultyUowFactory := NewFaultyUOWFactory(DB, 2)
+		uc := usecase.NewTransactionUsecase(transactionRepo, userRepo, faultyUowFactory, logrus.New())
 
 		err := uc.Create(ctx, transaction)
 		require.Error(t, err)
@@ -143,32 +144,6 @@ func (u *FaultyUOW) Begin(ctx context.Context) error {
 	return nil
 }
 
-func (u *FaultyUOW) Exec(query string, args ...any) (sql.Result, error) {
-	if u.tx == nil {
-		return nil, errors.New("transaction has not been started")
-	}
-
-	u.counter++
-	if u.counter == u.failOn {
-		return nil, errors.New("simulated execution failure")
-	}
-
-	return u.tx.Exec(query, args...)
-}
-
-func (u *FaultyUOW) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	if u.tx == nil {
-		return nil, errors.New("transaction has not been started")
-	}
-
-	u.counter++
-	if u.counter == u.failOn {
-		return nil, errors.New("simulated execution failure")
-	}
-
-	return u.tx.ExecContext(ctx, query, args...)
-}
-
 func (u *FaultyUOW) Commit() error {
 	if u.tx == nil {
 		return errors.New("transaction has not been started")
@@ -189,4 +164,42 @@ func (u *FaultyUOW) Rollback() error {
 
 	fmt.Println("Rolling back transaction...")
 	return u.tx.Rollback()
+}
+
+func (u *FaultyUOW) Exec(query string, args ...any) (sql.Result, error) {
+	return u.ExecContext(context.Background(), query, args...)
+}
+
+func (u *FaultyUOW) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	if u.tx == nil {
+		return nil, errors.New("transaction has not been started")
+	}
+
+	u.counter++
+	if u.counter == u.failOn {
+		return nil, errors.New("simulated execution failure")
+	}
+
+	return u.tx.ExecContext(ctx, query, args...)
+}
+
+func (u *FaultyUOW) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	if u.tx == nil {
+		return nil
+	}
+	return u.tx.QueryRowContext(ctx, query, args...)
+}
+
+// Реализация фабрики для FaultyUOW
+type FaultyUOWFactory struct {
+	db     *sql.DB
+	failOn int
+}
+
+func NewFaultyUOWFactory(db *sql.DB, failOn int) uowI.Factory {
+	return &FaultyUOWFactory{db: db, failOn: failOn}
+}
+
+func (f *FaultyUOWFactory) NewUnitOfWork() uowI.UnitOfWork {
+	return NewFaultyUOW(f.db, f.failOn)
 }

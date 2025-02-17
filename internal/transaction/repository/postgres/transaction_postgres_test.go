@@ -11,6 +11,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 func TestTransactionPostgresRepository_Create(t *testing.T) {
@@ -21,6 +22,7 @@ func TestTransactionPostgresRepository_Create(t *testing.T) {
 	defer db.Close()
 
 	repo := NewTransactionPostgresRepository(db, logrus.New())
+	mockUOW := &MockUnitOfWork{db: db}
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("INSERT INTO transactions .* RETURNING .*").
@@ -28,7 +30,7 @@ func TestTransactionPostgresRepository_Create(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id", "sender_user_id", "receiver_user_id", "amount"}).
 				AddRow(1, 1, 2, 100))
 
-		tx, err := repo.Create(context.Background(), &model.Transaction{
+		tx, err := repo.Create(context.Background(), mockUOW, &model.Transaction{
 			SenderUserID:   1,
 			ReceiverUserID: 2,
 			Amount:         100,
@@ -49,7 +51,7 @@ func TestTransactionPostgresRepository_Create(t *testing.T) {
 			WithArgs(1, 2, 100).
 			WillReturnError(expectedErr)
 
-		_, err := repo.Create(context.Background(), &model.Transaction{
+		_, err := repo.Create(context.Background(), mockUOW, &model.Transaction{
 			SenderUserID:   1,
 			ReceiverUserID: 2,
 			Amount:         100,
@@ -189,4 +191,21 @@ func TestTransactionPostgresRepository_GetSentByUserID(t *testing.T) {
 
 		assert.ErrorContains(t, err, "converting NULL to string")
 	})
+}
+
+type MockUnitOfWork struct {
+	uow.Executor
+	db *sql.DB
+}
+
+func (m *MockUnitOfWork) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return m.db.ExecContext(ctx, query, args...)
+}
+
+func (m *MockUnitOfWork) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return m.db.QueryContext(ctx, query, args...)
+}
+
+func (m *MockUnitOfWork) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return m.db.QueryRowContext(ctx, query, args...)
 }

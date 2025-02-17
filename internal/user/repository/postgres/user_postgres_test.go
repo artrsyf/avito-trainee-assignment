@@ -211,7 +211,7 @@ func TestUserPostgresRepository_GetByUsername(t *testing.T) {
 }
 
 type MockUnitOfWork struct {
-	uow.UnitOfWorkI
+	uow.Executor
 	ExecContextFn func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
-	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type UserPostgresRepository struct {
@@ -73,7 +73,7 @@ func (repo *UserPostgresRepository) Create(
 
 func (repo *UserPostgresRepository) Update(
 	ctx context.Context,
-	uow uowI.UnitOfWorkI,
+	uow uow.Executor,
 	user *model.User,
 ) error {
 	_, err := uow.ExecContext(

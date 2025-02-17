@@ -10,6 +10,7 @@ import (
 
 	entity "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	model "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
+	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,18 +38,18 @@ func (m *MockPurchaseRepositoryI) EXPECT() *MockPurchaseRepositoryIMockRecorder 
 }
 
 // Create mocks base method.
-func (m *MockPurchaseRepositoryI) Create(ctx context.Context, purchase *entity.Purchase) (*model.Purchase, error) {
+func (m *MockPurchaseRepositoryI) Create(ctx context.Context, uow uow.Executor, purchase *entity.Purchase) (*model.Purchase, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, purchase)
+	ret := m.ctrl.Call(m, "Create", ctx, uow, purchase)
 	ret0, _ := ret[0].(*model.Purchase)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockPurchaseRepositoryIMockRecorder) Create(ctx, purchase interface{}) *gomock.Call {
+func (mr *MockPurchaseRepositoryIMockRecorder) Create(ctx, uow, purchase interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPurchaseRepositoryI)(nil).Create), ctx, purchase)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPurchaseRepositoryI)(nil).Create), ctx, uow, purchase)
 }
 
 // GetProductByType mocks base method.

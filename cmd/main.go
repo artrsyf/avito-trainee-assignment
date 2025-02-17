@@ -98,8 +98,7 @@ func main() {
 	transactionRepo := transactionRepository.NewTransactionPostgresRepository(postgresConnect, logger)
 	purchaseRepo := purchaseRepository.NewPurchasePostgresRepository(postgresConnect, logger)
 
-	transactionUOW := uow.NewSQLUnitOfWork(postgresConnect)
-	purchaseUOW := uow.NewSQLUnitOfWork(postgresConnect)
+	uowFactory := uow.NewFactory(postgresConnect)
 
 	sessionUC := sessionUsecase.NewSessionUsecase(
 		sessionRepo,
@@ -110,13 +109,13 @@ func main() {
 	transactionUC := transactionUsecase.NewTransactionUsecase(
 		transactionRepo,
 		userRepo,
-		transactionUOW,
+		uowFactory,
 		logger,
 	)
 	purchaseUC := purchaseUsecase.NewPurchaseUsecase(
 		purchaseRepo,
 		userRepo,
-		purchaseUOW,
+		uowFactory,
 		logger,
 	)
 	userUC := userUsecase.NewUserUsecase(

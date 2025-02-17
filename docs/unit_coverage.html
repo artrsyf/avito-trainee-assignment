@@ -57,7 +57,7 @@
 				
 				<option value="file0">github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository/postgres/purchase_postgres.go (92.5%)</option>
 				
-				<option value="file1">github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase/usecase.go (94.7%)</option>
+				<option value="file1">github.com/artrsyf/avito-trainee-assignment/internal/purchase/usecase/usecase.go (94.9%)</option>
 				
 				<option value="file2">github.com/artrsyf/avito-trainee-assignment/internal/session/repository/redis/session_redis.go (92.6%)</option>
 				
@@ -65,7 +65,7 @@
 				
 				<option value="file4">github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository/postgres/transaction_postgres.go (95.0%)</option>
 				
-				<option value="file5">github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase/usecase.go (80.4%)</option>
+				<option value="file5">github.com/artrsyf/avito-trainee-assignment/internal/transaction/usecase/usecase.go (80.9%)</option>
 				
 				<option value="file6">github.com/artrsyf/avito-trainee-assignment/internal/user/repository/postgres/user_postgres.go (94.9%)</option>
 				
@@ -89,9 +89,11 @@ import (
         "context"
         "database/sql"
 
+        "github.com/sirupsen/logrus"
+
         "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
         "github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
-        "github.com/sirupsen/logrus"
+        "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchasePostgresRepository struct {
@@ -106,12 +108,19 @@ func NewPurchasePostgresRepository(db *sql.DB, logger *logrus.Logger) *PurchaseP
         }
 }</span>
 
-func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *entity.Purchase) (*model.Purchase, error) <span class="cov8" title="1">{
+func (repo *PurchasePostgresRepository) Create(
+        ctx context.Context,
+        uow uow.Executor,
+        purchase *entity.Purchase,
+) (*model.Purchase, error) <span class="cov8" title="1">{
         createdPurchase := model.Purchase{}
         var purchaseTypeID int
 
-        err := repo.DB.
-                QueryRowContext(ctx, "SELECT id FROM purchase_types WHERE name = $1", purchase.PurchaseTypeName).Scan(&amp;purchaseTypeID)
+        err := repo.DB.QueryRowContext(
+                ctx,
+                "SELECT id FROM purchase_types WHERE name = $1",
+                purchase.PurchaseTypeName,
+        ).Scan(&amp;purchaseTypeID)
         if err == sql.ErrNoRows </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to select not existed product")
                 return nil, entity.ErrNotExistedProduct
@@ -121,8 +130,18 @@ func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *en
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">err = repo.DB.QueryRowContext(ctx, "INSERT INTO purchases (purchaser_id, purchase_type_id) VALUES ($1, $2) RETURNING id, purchaser_id, purchase_type_id", purchase.PurchaserID, purchaseTypeID).
-                Scan(&amp;createdPurchase.ID, &amp;createdPurchase.PurchaserID, &amp;createdPurchase.PurchaseTypeID)
+        <span class="cov8" title="1">err = uow.QueryRowContext(
+                ctx,
+                `INSERT INTO purchases (purchaser_id, purchase_type_id) 
+                VALUES ($1, $2) 
+                RETURNING id, purchaser_id, purchase_type_id`,
+                purchase.PurchaserID, purchaseTypeID,
+        ).Scan(
+                &amp;createdPurchase.ID,
+                &amp;createdPurchase.PurchaserID,
+                &amp;createdPurchase.PurchaseTypeID,
+        )
+
         if err != nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to insert purchase")
                 return nil, err
@@ -131,12 +150,17 @@ func (repo *PurchasePostgresRepository) Create(ctx context.Context, purchase *en
         <span class="cov8" title="1">return &amp;createdPurchase, nil</span>
 }
 
-func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, purchaseTypeName string) (*model.PurchaseType, error) <span class="cov8" title="1">{
+func (repo *PurchasePostgresRepository) GetProductByType(
+        ctx context.Context,
+        purchaseTypeName string,
+) (*model.PurchaseType, error) <span class="cov8" title="1">{
         purchaseType := model.PurchaseType{}
 
-        err := repo.DB.
-                QueryRowContext(ctx, "SELECT id, name, cost FROM purchase_types WHERE name = $1", purchaseTypeName).
-                Scan(&amp;purchaseType.ID, &amp;purchaseType.Name, &amp;purchaseType.Cost)
+        err := repo.DB.QueryRowContext(
+                ctx,
+                "SELECT id, name, cost FROM purchase_types WHERE name = $1",
+                purchaseTypeName,
+        ).Scan(&amp;purchaseType.ID, &amp;purchaseType.Name, &amp;purchaseType.Cost)
         if err == sql.ErrNoRows </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to select not existed product")
                 return nil, entity.ErrNotExistedProduct
@@ -149,7 +173,10 @@ func (repo *PurchasePostgresRepository) GetProductByType(ctx context.Context, pu
         <span class="cov8" title="1">return &amp;purchaseType, nil</span>
 }
 
-func (repo *PurchasePostgresRepository) GetPurchasesByUserID(ctx context.Context, userID uint) (entity.Inventory, error) <span class="cov8" title="1">{
+func (repo *PurchasePostgresRepository) GetPurchasesByUserID(
+        ctx context.Context,
+        userID uint,
+) (entity.Inventory, error) <span class="cov8" title="1">{
         rows, err := repo.DB.QueryContext(ctx, `
                 SELECT pt.name, COUNT(p.id) as quantity
                 FROM purchases p
@@ -193,7 +220,7 @@ import (
 
         purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
         userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+        "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchaseUsecaseI interface {
@@ -203,20 +230,28 @@ type PurchaseUsecaseI interface {
 type PurchaseUsecase struct {
         purchaseRepo purchaseRepo.PurchaseRepositoryI
         userRepo     userRepo.UserRepositoryI
-        uow          uowI.UnitOfWorkI
+        uowFactory   uow.Factory
         logger       *logrus.Logger
 }
 
-func NewPurchaseUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *PurchaseUsecase <span class="cov8" title="1">{
+func NewPurchaseUsecase(
+        purchaseRepository purchaseRepo.PurchaseRepositoryI,
+        userRepository userRepo.UserRepositoryI,
+        uowFactory uow.Factory,
+        logger *logrus.Logger,
+) *PurchaseUsecase <span class="cov8" title="1">{
         return &amp;PurchaseUsecase{
                 purchaseRepo: purchaseRepository,
                 userRepo:     userRepository,
-                uow:          uow,
+                uowFactory:   uowFactory,
                 logger:       logger,
         }
 }</span>
 
-func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.PurchaseItemRequest) error <span class="cov8" title="1">{
+func (uc *PurchaseUsecase) Create(
+        ctx context.Context,
+        purchaseRequest *dto.PurchaseItemRequest,
+) error <span class="cov8" title="1">{
         purchaseEntity := dto.PurchaseItemRequestToEntity(purchaseRequest)
 
         customerModel, err := uc.userRepo.GetByID(ctx, purchaseEntity.PurchaserID)
@@ -238,15 +273,17 @@ func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.Purc
 
         <span class="cov8" title="1">customerModel.Coins -= purchaseType.Cost
 
-        err = uc.uow.Begin(ctx)
+        uow := uc.uowFactory.NewUnitOfWork()
+
+        err = uow.Begin(ctx)
         if err != nil </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Transaction begin error")
                 return err
         }</span>
 
-        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, customerModel)
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uow, customerModel)
         if err != nil </span><span class="cov8" title="1">{
-                rbErr := uc.uow.Rollback()
+                rbErr := uow.Rollback()
                 if rbErr != nil </span><span class="cov0" title="0">{
                         uc.logger.WithError(rbErr).Error("Rollback error encountered")
                 }</span>
@@ -254,9 +291,9 @@ func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.Purc
                 return err</span>
         }
 
-        <span class="cov8" title="1">purchaseModel, err := uc.purchaseRepo.Create(ctx, purchaseEntity)
+        <span class="cov8" title="1">purchaseModel, err := uc.purchaseRepo.Create(ctx, uow, purchaseEntity)
         if err != nil </span><span class="cov8" title="1">{
-                rbErr := uc.uow.Rollback()
+                rbErr := uow.Rollback()
                 if rbErr != nil </span><span class="cov0" title="0">{
                         uc.logger.WithError(rbErr).Error("Rollback error encountered")
                 }</span>
@@ -264,7 +301,7 @@ func (uc *PurchaseUsecase) Create(ctx context.Context, purchaseRequest *dto.Purc
                 return err</span>
         }
 
-        <span class="cov8" title="1">err = uc.uow.Commit()
+        <span class="cov8" title="1">err = uow.Commit()
         if err != nil </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Transaction commit error")
                 return err
@@ -288,11 +325,12 @@ import (
         "strconv"
         "time"
 
+        "github.com/redis/go-redis/v9"
+        "github.com/sirupsen/logrus"
+
         "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/dto"
         "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/entity"
         "github.com/artrsyf/avito-trainee-assignment/internal/session/domain/model"
-        "github.com/redis/go-redis/v9"
-        "github.com/sirupsen/logrus"
 )
 
 type SessionRedisRepository struct {
@@ -300,14 +338,20 @@ type SessionRedisRepository struct {
         logger *logrus.Logger
 }
 
-func NewSessionRedisRepository(client *redis.Client, logger *logrus.Logger) *SessionRedisRepository <span class="cov8" title="1">{
+func NewSessionRedisRepository(
+        client *redis.Client,
+        logger *logrus.Logger,
+) *SessionRedisRepository <span class="cov8" title="1">{
         return &amp;SessionRedisRepository{
                 client: client,
                 logger: logger,
         }
 }</span>
 
-func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *entity.Session) (*model.Session, error) <span class="cov8" title="1">{
+func (repo *SessionRedisRepository) Create(
+        ctx context.Context,
+        sessionEntity *entity.Session,
+) (*model.Session, error) <span class="cov8" title="1">{
         mkey := "sessions:" + strconv.FormatUint(uint64(sessionEntity.UserID), 10)
 
         sessionModel := dto.SessionEntityToModel(sessionEntity)
@@ -338,7 +382,10 @@ func (repo *SessionRedisRepository) Create(ctx context.Context, sessionEntity *e
         return sessionModel, nil</span>
 }
 
-func (repo *SessionRedisRepository) Check(ctx context.Context, userID uint) (*model.Session, error) <span class="cov8" title="1">{
+func (repo *SessionRedisRepository) Check(
+        ctx context.Context,
+        userID uint,
+) (*model.Session, error) <span class="cov8" title="1">{
         mkey := "sessions:" + strconv.FormatUint(uint64(userID), 10)
 
         data, err := repo.client.Get(ctx, mkey).Bytes()
@@ -382,7 +429,10 @@ import (
 )
 
 type SessionUsecaseI interface {
-        LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error)
+        LoginOrSignup(
+                ctx context.Context,
+                authRequest *sessionDTO.AuthRequest,
+        ) (*sessionEntity.Session, error)
 }
 
 type SessionUsecase struct {
@@ -392,7 +442,12 @@ type SessionUsecase struct {
         logger      *logrus.Logger
 }
 
-func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRepository userRepo.UserRepositoryI, cfg config.UserConfig, logger *logrus.Logger) *SessionUsecase <span class="cov8" title="1">{
+func NewSessionUsecase(
+        sessionRepository sessionRepo.SessionRepositoryI,
+        userRepository userRepo.UserRepositoryI,
+        cfg config.UserConfig,
+        logger *logrus.Logger,
+) *SessionUsecase <span class="cov8" title="1">{
         return &amp;SessionUsecase{
                 sessionRepo: sessionRepository,
                 userRepo:    userRepository,
@@ -401,7 +456,10 @@ func NewSessionUsecase(sessionRepository sessionRepo.SessionRepositoryI, userRep
         }
 }</span>
 
-func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) <span class="cov8" title="1">{
+func (uc *SessionUsecase) LoginOrSignup(
+        ctx context.Context,
+        authRequest *sessionDTO.AuthRequest,
+) (*sessionEntity.Session, error) <span class="cov8" title="1">{
         userModel, err := uc.userRepo.GetByUsername(ctx, authRequest.Username)
         if err != nil &amp;&amp; err != userEntity.ErrIsNotExist </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Failed to get user by username")
@@ -410,7 +468,7 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 
         <span class="cov8" title="1">if userModel != nil </span><span class="cov8" title="1">{
                 if !checkPassword(authRequest.Password, userModel.PasswordHash) </span><span class="cov8" title="1">{
-                        uc.logger.Error("Failed to authenticate user")
+                        uc.logger.Info("Failed to authenticate user")
                         return nil, sessionEntity.ErrWrongCredentials
                 }</span>
 
@@ -419,15 +477,18 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
                         return uc.grantSession(ctx, userModel.ID, authRequest)
                 }</span>
                 <span class="cov8" title="1">if checkErr != nil </span><span class="cov0" title="0">{
-                        uc.logger.WithError(err).Error("An error occured due checking user session")
-                        return nil, err
+                        uc.logger.WithError(checkErr).Error("An error occured due checking user session")
+                        return nil, checkErr
                 }</span>
 
                 <span class="cov8" title="1">session := sessionDTO.SessionModelToEntity(sessionModel)
                 return session, nil</span>
         }
 
-        <span class="cov8" title="1">user, err := userDTO.AuthRequestToEntity(authRequest, uc.userConfig.InitCoinsBalance)
+        <span class="cov8" title="1">user, err := userDTO.AuthRequestToEntity(
+                authRequest,
+                uc.userConfig.InitCoinsBalance,
+        )
         if err != nil </span><span class="cov0" title="0">{
                 uc.logger.WithError(err).WithField(
                         "wrong request", authRequest,
@@ -447,10 +508,17 @@ func (uc *SessionUsecase) LoginOrSignup(ctx context.Context, authRequest *sessio
 }
 
 func checkPassword(inputPassword, storedPasswordHash string) bool <span class="cov8" title="1">{
-        return bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(inputPassword)) == nil
+        return bcrypt.CompareHashAndPassword(
+                []byte(storedPasswordHash),
+                []byte(inputPassword),
+        ) == nil
 }</span>
 
-func (uc *SessionUsecase) grantSession(ctx context.Context, userID uint, authRequest *sessionDTO.AuthRequest) (*sessionEntity.Session, error) <span class="cov8" title="1">{
+func (uc *SessionUsecase) grantSession(
+        ctx context.Context,
+        userID uint,
+        authRequest *sessionDTO.AuthRequest,
+) (*sessionEntity.Session, error) <span class="cov8" title="1">{
         accessTokenExpiration, err := uc.userConfig.Auth.GetAccessTokenExpiration()
         if err != nil </span><span class="cov0" title="0">{
                 uc.logger.WithError(err).Error("Failed to parse access token expiration")
@@ -500,9 +568,11 @@ import (
         "context"
         "database/sql"
 
+        "github.com/sirupsen/logrus"
+
         "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
         "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
-        "github.com/sirupsen/logrus"
+        "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionPostgresRepository struct {
@@ -510,17 +580,34 @@ type TransactionPostgresRepository struct {
         logger *logrus.Logger
 }
 
-func NewTransactionPostgresRepository(db *sql.DB, logger *logrus.Logger) *TransactionPostgresRepository <span class="cov8" title="1">{
+func NewTransactionPostgresRepository(
+        db *sql.DB,
+        logger *logrus.Logger,
+) *TransactionPostgresRepository <span class="cov8" title="1">{
         return &amp;TransactionPostgresRepository{
                 DB:     db,
                 logger: logger,
         }
 }</span>
 
-func (repo *TransactionPostgresRepository) Create(ctx context.Context, transaction *model.Transaction) (*model.Transaction, error) <span class="cov8" title="1">{
+func (repo *TransactionPostgresRepository) Create(
+        ctx context.Context,
+        uow uow.Executor,
+        transaction *model.Transaction,
+) (*model.Transaction, error) <span class="cov8" title="1">{
         createdTransaction := model.Transaction{}
-        err := repo.DB.QueryRowContext(ctx, "INSERT INTO transactions (sender_user_id, receiver_user_id, amount) VALUES ($1, $2, $3) RETURNING id, sender_user_id, receiver_user_id, amount", transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount).
-                Scan(&amp;createdTransaction.ID, &amp;createdTransaction.SenderUserID, &amp;createdTransaction.ReceiverUserID, &amp;createdTransaction.Amount)
+        err := uow.QueryRowContext(
+                ctx,
+                `INSERT INTO transactions (sender_user_id, receiver_user_id, amount) 
+                VALUES ($1, $2, $3) 
+                RETURNING id, sender_user_id, receiver_user_id, amount`,
+                transaction.SenderUserID, transaction.ReceiverUserID, transaction.Amount,
+        ).Scan(
+                &amp;createdTransaction.ID,
+                &amp;createdTransaction.SenderUserID,
+                &amp;createdTransaction.ReceiverUserID,
+                &amp;createdTransaction.Amount,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to create transaction")
                 return nil, err
@@ -533,19 +620,19 @@ func (repo *TransactionPostgresRepository) Create(ctx context.Context, transacti
         return &amp;createdTransaction, nil</span>
 }
 
-func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Context, userID uint) (entity.ReceivedHistory, error) <span class="cov8" title="1">{
-        rows, err := repo.DB.QueryContext(ctx, `
-                SELECT
-                        u1.username, 
-                        SUM(t.amount)
-                FROM 
-                        transactions t
-                JOIN 
-                        users u1 ON t.sender_user_id = u1.id
-                WHERE 
-                        t.receiver_user_id = $1
-                GROUP BY 
-                        u1.username`, userID)
+func (repo *TransactionPostgresRepository) GetReceivedByUserID(
+        ctx context.Context,
+        userID uint,
+) (entity.ReceivedHistory, error) <span class="cov8" title="1">{
+        rows, err := repo.DB.QueryContext(
+                ctx,
+                `SELECT u1.username, SUM(t.amount)
+                FROM transactions t
+                JOIN users u1 ON t.sender_user_id = u1.id
+                WHERE t.receiver_user_id = $1
+                GROUP BY u1.username`,
+                userID,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to select received transaction group")
                 return nil, err
@@ -559,7 +646,10 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Conte
         <span class="cov8" title="1">receivedHistory := entity.ReceivedHistory{}
         for rows.Next() </span><span class="cov8" title="1">{
                 currentReceivedTransactionGroup := entity.ReceivedTransactionGroup{}
-                err := rows.Scan(&amp;currentReceivedTransactionGroup.SenderUsername, &amp;currentReceivedTransactionGroup.Amount)
+                err := rows.Scan(
+                        &amp;currentReceivedTransactionGroup.SenderUsername,
+                        &amp;currentReceivedTransactionGroup.Amount,
+                )
                 if err != nil </span><span class="cov8" title="1">{
                         repo.logger.WithError(err).Error("Failed to select received transactions")
                         return nil, err
@@ -571,19 +661,19 @@ func (repo *TransactionPostgresRepository) GetReceivedByUserID(ctx context.Conte
         <span class="cov8" title="1">return receivedHistory, nil</span>
 }
 
-func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, userID uint) (entity.SentHistory, error) <span class="cov8" title="1">{
-        rows, err := repo.DB.QueryContext(ctx, `
-                SELECT 
-                        u1.username,
-                        SUM(t.amount)
-                FROM 
-                        transactions t
-                JOIN 
-                        users u1 ON t.receiver_user_id = u1.id
-                WHERE 
-                        t.sender_user_id = $1
-                GROUP BY 
-                        u1.username`, userID)
+func (repo *TransactionPostgresRepository) GetSentByUserID(
+        ctx context.Context,
+        userID uint,
+) (entity.SentHistory, error) <span class="cov8" title="1">{
+        rows, err := repo.DB.QueryContext(
+                ctx,
+                `SELECT u1.username, SUM(t.amount)
+                FROM transactions t
+                JOIN users u1 ON t.receiver_user_id = u1.id
+                WHERE t.sender_user_id = $1
+                GROUP BY u1.username`,
+                userID,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to select sent transaction group")
                 return nil, err
@@ -597,7 +687,10 @@ func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, 
         <span class="cov8" title="1">sentHistory := entity.SentHistory{}
         for rows.Next() </span><span class="cov8" title="1">{
                 currentSentTransactionGroup := entity.SentTransactionGroup{}
-                err := rows.Scan(&amp;currentSentTransactionGroup.ReceiverUsername, &amp;currentSentTransactionGroup.Amount)
+                err := rows.Scan(
+                        &amp;currentSentTransactionGroup.ReceiverUsername,
+                        &amp;currentSentTransactionGroup.Amount,
+                )
                 if err != nil </span><span class="cov8" title="1">{
                         repo.logger.WithError(err).Error("Failed to select sent transactions")
                         return nil, err
@@ -615,13 +708,13 @@ func (repo *TransactionPostgresRepository) GetSentByUserID(ctx context.Context, 
 import (
         "context"
 
-        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
-        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
         "github.com/sirupsen/logrus"
 
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
+        "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
         transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
         userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+        "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type TransactionUsecaseI interface {
@@ -631,27 +724,41 @@ type TransactionUsecaseI interface {
 type TransactionUsecase struct {
         transactionRepo transactionRepo.TransactionRepositoryI
         userRepo        userRepo.UserRepositoryI
-        uow             uowI.UnitOfWorkI
+        uowFactory      uow.Factory
         logger          *logrus.Logger
 }
 
-func NewTransactionUsecase(transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, uow uowI.UnitOfWorkI, logger *logrus.Logger) *TransactionUsecase <span class="cov8" title="1">{
+func NewTransactionUsecase(
+        transactionRepository transactionRepo.TransactionRepositoryI,
+        userRepository userRepo.UserRepositoryI,
+        uowFactory uow.Factory,
+        logger *logrus.Logger,
+) *TransactionUsecase <span class="cov8" title="1">{
         return &amp;TransactionUsecase{
                 transactionRepo: transactionRepository,
                 userRepo:        userRepository,
-                uow:             uow,
+                uowFactory:      uowFactory,
                 logger:          logger,
         }
 }</span>
 
-func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *entity.Transaction) error <span class="cov8" title="1">{
-        senderUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.SenderUsername)
+func (uc *TransactionUsecase) Create(
+        ctx context.Context,
+        transactionEntity *entity.Transaction,
+) error <span class="cov8" title="1">{
+        senderUserModel, err := uc.userRepo.GetByUsername(
+                ctx,
+                transactionEntity.SenderUsername,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Failed to get sender user by username")
                 return err
         }</span>
 
-        <span class="cov8" title="1">receiverUserModel, err := uc.userRepo.GetByUsername(ctx, transactionEntity.ReceiverUsername)
+        <span class="cov8" title="1">receiverUserModel, err := uc.userRepo.GetByUsername(
+                ctx,
+                transactionEntity.ReceiverUsername,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Failed to get receiver user by username")
                 return err
@@ -665,15 +772,17 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
         <span class="cov8" title="1">senderUserModel.Coins -= transactionEntity.Amount
         receiverUserModel.Coins += transactionEntity.Amount
 
-        err = uc.uow.Begin(ctx)
+        uow := uc.uowFactory.NewUnitOfWork()
+
+        err = uow.Begin(ctx)
         if err != nil </span><span class="cov0" title="0">{
                 uc.logger.WithError(err).Error("Transaction begin error")
                 return err
         }</span>
 
-        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, senderUserModel)
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uow, senderUserModel)
         if err != nil </span><span class="cov8" title="1">{
-                rbErr := uc.uow.Rollback()
+                rbErr := uow.Rollback()
                 if rbErr != nil </span><span class="cov0" title="0">{
                         uc.logger.WithError(rbErr).Error("Rollback error encountered")
                 }</span>
@@ -681,9 +790,9 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
                 return err</span>
         }
 
-        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uc.uow, receiverUserModel)
+        <span class="cov8" title="1">err = uc.userRepo.Update(ctx, uow, receiverUserModel)
         if err != nil </span><span class="cov0" title="0">{
-                rbErr := uc.uow.Rollback()
+                rbErr := uow.Rollback()
                 if rbErr != nil </span><span class="cov0" title="0">{
                         uc.logger.WithError(rbErr).Error("Rollback error encountered")
                 }</span>
@@ -696,9 +805,9 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
                 ReceiverUserID: receiverUserModel.ID,
                 Amount:         transactionEntity.Amount,
         }
-        _, err = uc.transactionRepo.Create(ctx, transactionModel)
+        _, err = uc.transactionRepo.Create(ctx, uow, transactionModel)
         if err != nil </span><span class="cov8" title="1">{
-                rbErr := uc.uow.Rollback()
+                rbErr := uow.Rollback()
                 if rbErr != nil </span><span class="cov0" title="0">{
                         uc.logger.WithError(rbErr).Error("Rollback error encountered")
                 }</span>
@@ -706,9 +815,9 @@ func (uc *TransactionUsecase) Create(ctx context.Context, transactionEntity *ent
                 return err</span>
         }
 
-        <span class="cov8" title="1">err = uc.uow.Commit()
+        <span class="cov8" title="1">err = uow.Commit()
         if err != nil </span><span class="cov8" title="1">{
-                uc.logger.WithError(err).Error("Transaction commit error")
+                uc.logger.WithError(err).Error("Transaction commit error due transfers creating")
                 return err
         }</span>
 
@@ -728,10 +837,11 @@ import (
         "context"
         "database/sql"
 
+        "github.com/sirupsen/logrus"
+
         "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/entity"
         "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
-        uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
-        "github.com/sirupsen/logrus"
+        "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type UserPostgresRepository struct {
@@ -739,16 +849,26 @@ type UserPostgresRepository struct {
         logger *logrus.Logger
 }
 
-func NewUserPostgresRepository(db *sql.DB, logger *logrus.Logger) *UserPostgresRepository <span class="cov8" title="1">{
+func NewUserPostgresRepository(
+        db *sql.DB,
+        logger *logrus.Logger,
+) *UserPostgresRepository <span class="cov8" title="1">{
         return &amp;UserPostgresRepository{
                 DB:     db,
                 logger: logger,
         }
 }</span>
 
-func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.User) (*model.User, error) <span class="cov8" title="1">{
+func (repo *UserPostgresRepository) Create(
+        ctx context.Context,
+        user *entity.User,
+) (*model.User, error) <span class="cov8" title="1">{
         err := repo.DB.
-                QueryRowContext(ctx, "SELECT 1 FROM users WHERE username = $1", user.Username).Scan(new(int))
+                QueryRowContext(
+                        ctx,
+                        "SELECT 1 FROM users WHERE username = $1",
+                        user.Username,
+                ).Scan(new(int))
         if err == nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Trying to create existing user")
                 return nil, entity.ErrAlreadyCreated
@@ -760,8 +880,18 @@ func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.Use
         }</span>
 
         <span class="cov8" title="1">createdUser := model.User{}
-        err = repo.DB.QueryRowContext(ctx, "INSERT INTO users (username, coins, password_hash) VALUES ($1, $2, $3) RETURNING id, username, coins, password_hash", user.Username, user.Coins, user.PasswordHash).
-                Scan(&amp;createdUser.ID, &amp;createdUser.Username, &amp;createdUser.Coins, &amp;createdUser.PasswordHash)
+        err = repo.DB.QueryRowContext(
+                ctx,
+                `INSERT INTO users (username, coins, password_hash) 
+                VALUES ($1, $2, $3) 
+                RETURNING id, username, coins, password_hash`,
+                user.Username, user.Coins, user.PasswordHash,
+        ).Scan(
+                &amp;createdUser.ID,
+                &amp;createdUser.Username,
+                &amp;createdUser.Coins,
+                &amp;createdUser.PasswordHash,
+        )
         if err != nil </span><span class="cov0" title="0">{
                 repo.logger.WithError(err).Error("Failed to create user")
                 return nil, err
@@ -774,8 +904,16 @@ func (repo *UserPostgresRepository) Create(ctx context.Context, user *entity.Use
         return &amp;createdUser, nil</span>
 }
 
-func (repo *UserPostgresRepository) Update(ctx context.Context, uow uowI.UnitOfWorkI, user *model.User) error <span class="cov8" title="1">{
-        _, err := uow.ExecContext(ctx, "UPDATE users SET coins = $1 WHERE id = $2", user.Coins, user.ID)
+func (repo *UserPostgresRepository) Update(
+        ctx context.Context,
+        uow uow.Executor,
+        user *model.User,
+) error <span class="cov8" title="1">{
+        _, err := uow.ExecContext(
+                ctx,
+                "UPDATE users SET coins = $1 WHERE id = $2",
+                user.Coins, user.ID,
+        )
         if err != nil </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Failed to update user")
                 return err
@@ -788,12 +926,18 @@ func (repo *UserPostgresRepository) Update(ctx context.Context, uow uowI.UnitOfW
         return nil</span>
 }
 
-func (repo *UserPostgresRepository) GetByID(ctx context.Context, id uint) (*model.User, error) <span class="cov8" title="1">{
+func (repo *UserPostgresRepository) GetByID(
+        ctx context.Context,
+        id uint,
+) (*model.User, error) <span class="cov8" title="1">{
         user := model.User{}
 
         err := repo.DB.
-                QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE id = $1", id).
-                Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
+                QueryRowContext(
+                        ctx,
+                        "SELECT id, username, coins, password_hash FROM users WHERE id = $1",
+                        id,
+                ).Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
         if err == sql.ErrNoRows </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Couldn't find such user by id")
                 return nil, entity.ErrIsNotExist
@@ -805,12 +949,18 @@ func (repo *UserPostgresRepository) GetByID(ctx context.Context, id uint) (*mode
         <span class="cov8" title="1">return &amp;user, nil</span>
 }
 
-func (repo *UserPostgresRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) <span class="cov8" title="1">{
+func (repo *UserPostgresRepository) GetByUsername(
+        ctx context.Context,
+        username string,
+) (*model.User, error) <span class="cov8" title="1">{
         user := model.User{}
 
         err := repo.DB.
-                QueryRowContext(ctx, "SELECT id, username, coins, password_hash FROM users WHERE username = $1", username).
-                Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
+                QueryRowContext(
+                        ctx,
+                        "SELECT id, username, coins, password_hash FROM users WHERE username = $1",
+                        username,
+                ).Scan(&amp;user.ID, &amp;user.Username, &amp;user.Coins, &amp;user.PasswordHash)
         if err == sql.ErrNoRows </span><span class="cov8" title="1">{
                 repo.logger.WithError(err).Error("Couldn't find such user by username")
                 return nil, entity.ErrIsNotExist
@@ -828,11 +978,12 @@ func (repo *UserPostgresRepository) GetByUsername(ctx context.Context, username 
 import (
         "context"
 
+        "github.com/sirupsen/logrus"
+
         purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
         transactionRepo "github.com/artrsyf/avito-trainee-assignment/internal/transaction/repository"
         "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/dto"
         userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-        "github.com/sirupsen/logrus"
 )
 
 type UserUsecaseI interface {
@@ -846,7 +997,12 @@ type UserUsecase struct {
         logger          *logrus.Logger
 }
 
-func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transactionRepository transactionRepo.TransactionRepositoryI, userRepository userRepo.UserRepositoryI, logger *logrus.Logger) *UserUsecase <span class="cov8" title="1">{
+func NewUserUsecase(
+        purchaseRepository purchaseRepo.PurchaseRepositoryI,
+        transactionRepository transactionRepo.TransactionRepositoryI,
+        userRepository userRepo.UserRepositoryI,
+        logger *logrus.Logger,
+) *UserUsecase <span class="cov8" title="1">{
         return &amp;UserUsecase{
                 purchaseRepo:    purchaseRepository,
                 transactionRepo: transactionRepository,
@@ -855,7 +1011,10 @@ func NewUserUsecase(purchaseRepository purchaseRepo.PurchaseRepositoryI, transac
         }
 }</span>
 
-func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetInfoResponse, error) <span class="cov8" title="1">{
+func (uc *UserUsecase) GetInfoByID(
+        ctx context.Context,
+        userID uint,
+) (*dto.GetInfoResponse, error) <span class="cov8" title="1">{
         userInfo, err := uc.userRepo.GetByID(ctx, userID)
         if err != nil </span><span class="cov8" title="1">{
                 uc.logger.WithError(err).Error("Failed to get user by id")
@@ -880,7 +1039,12 @@ func (uc *UserUsecase) GetInfoByID(ctx context.Context, userID uint) (*dto.GetIn
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">getInfoResponse := dto.CreateGetInfoResponse(userInfo.Coins, &amp;userInventory, &amp;userSentTransactions, &amp;userReceivedTransactions)
+        <span class="cov8" title="1">getInfoResponse := dto.CreateGetInfoResponse(
+                userInfo.Coins,
+                &amp;userInventory,
+                &amp;userSentTransactions,
+                &amp;userReceivedTransactions,
+        )
 
         uc.logger.WithFields(logrus.Fields{
                 "user_id": userID,

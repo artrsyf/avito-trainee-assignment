@@ -4,18 +4,32 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
-type SQLUnitOfWork struct {
+type PostgresUnitOfWork struct {
 	db *sql.DB
 	tx *sql.Tx
 }
 
-func NewSQLUnitOfWork(db *sql.DB) *SQLUnitOfWork {
-	return &SQLUnitOfWork{db: db}
+func NewFactory(db *sql.DB) uow.Factory {
+	return &factory{db: db}
 }
 
-func (u *SQLUnitOfWork) Begin(ctx context.Context) error {
+type factory struct {
+	db *sql.DB
+}
+
+func (f *factory) NewUnitOfWork() uow.UnitOfWork {
+	return &PostgresUnitOfWork{db: f.db}
+}
+
+func (u *PostgresUnitOfWork) Begin(ctx context.Context) error {
+	if u.tx != nil {
+		return fmt.Errorf("transaction already started")
+	}
+
 	tx, err := u.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -24,36 +38,40 @@ func (u *SQLUnitOfWork) Begin(ctx context.Context) error {
 	return nil
 }
 
-func (u *SQLUnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
+func (u *PostgresUnitOfWork) Commit() error {
+	defer func() { u.tx = nil }()
 	if u.tx == nil {
-		return nil, fmt.Errorf("transaction has not been started")
+		return fmt.Errorf("transaction not started")
+	}
+	return u.tx.Commit()
+}
+
+func (u *PostgresUnitOfWork) Rollback() error {
+	defer func() { u.tx = nil }()
+	if u.tx == nil {
+		return fmt.Errorf("transaction not started")
+	}
+	return u.tx.Rollback()
+}
+
+// Реализация методов Executor
+func (u *PostgresUnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
+	if u.tx == nil {
+		return nil, fmt.Errorf("transaction not started")
 	}
 	return u.tx.Exec(query, args...)
 }
 
-func (u *SQLUnitOfWork) ExecContext(
-	ctx context.Context,
-	query string,
-	args ...any,
-) (sql.Result, error) {
+func (u *PostgresUnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if u.tx == nil {
-		return nil, fmt.Errorf("transaction has not been started")
+		return nil, fmt.Errorf("transaction not started")
 	}
 	return u.tx.ExecContext(ctx, query, args...)
 }
 
-func (u *SQLUnitOfWork) Commit() error {
+func (u *PostgresUnitOfWork) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	if u.tx == nil {
-		return fmt.Errorf("transaction has not been started")
+		return nil
 	}
-
-	return u.tx.Commit()
-}
-
-func (u *SQLUnitOfWork) Rollback() error {
-	if u.tx == nil {
-		return fmt.Errorf("transaction has not been started")
-	}
-
-	return u.tx.Rollback()
+	return u.tx.QueryRowContext(ctx, query, args...)
 }

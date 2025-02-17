@@ -10,6 +10,7 @@ import (
 
 	entity "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/entity"
 	model "github.com/artrsyf/avito-trainee-assignment/internal/transaction/domain/model"
+	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,18 +38,18 @@ func (m *MockTransactionRepositoryI) EXPECT() *MockTransactionRepositoryIMockRec
 }
 
 // Create mocks base method.
-func (m *MockTransactionRepositoryI) Create(ctx context.Context, transaction *model.Transaction) (*model.Transaction, error) {
+func (m *MockTransactionRepositoryI) Create(ctx context.Context, uow uow.Executor, transaction *model.Transaction) (*model.Transaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, transaction)
+	ret := m.ctrl.Call(m, "Create", ctx, uow, transaction)
 	ret0, _ := ret[0].(*model.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockTransactionRepositoryIMockRecorder) Create(ctx, transaction interface{}) *gomock.Call {
+func (mr *MockTransactionRepositoryIMockRecorder) Create(ctx, uow, transaction interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionRepositoryI)(nil).Create), ctx, transaction)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionRepositoryI)(nil).Create), ctx, uow, transaction)
 }
 
 // GetReceivedByUserID mocks base method.

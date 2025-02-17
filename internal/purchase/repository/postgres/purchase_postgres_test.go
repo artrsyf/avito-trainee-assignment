@@ -11,6 +11,7 @@ import (
 
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/entity"
 	"github.com/artrsyf/avito-trainee-assignment/internal/purchase/domain/model"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 func TestPurchasePostgresRepository_Create(t *testing.T) {
@@ -21,6 +22,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 	defer db.Close()
 
 	repo := NewPurchasePostgresRepository(db, logrus.New())
+	mockUOW := &MockUnitOfWork{db: db}
 
 	t.Run("Success", func(t *testing.T) {
 		mock.ExpectQuery("SELECT id FROM purchase_types WHERE name = \\$1").
@@ -32,7 +34,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			WillReturnRows(sqlmock.NewRows([]string{"id", "purchaser_id", "purchase_type_id"}).
 				AddRow(1, 1, 1))
 
-		purchase, err := repo.Create(context.Background(), &entity.Purchase{
+		purchase, err := repo.Create(context.Background(), mockUOW, &entity.Purchase{
 			PurchaserID:      1,
 			PurchaseTypeName: "t-shirt",
 		})
@@ -50,7 +52,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			WithArgs("invalid-type").
 			WillReturnError(sql.ErrNoRows)
 
-		_, err := repo.Create(context.Background(), &entity.Purchase{
+		_, err := repo.Create(context.Background(), mockUOW, &entity.Purchase{
 			PurchaserID:      1,
 			PurchaseTypeName: "invalid-type",
 		})
@@ -68,7 +70,7 @@ func TestPurchasePostgresRepository_Create(t *testing.T) {
 			WithArgs(1, 1).
 			WillReturnError(expectedErr)
 
-		_, err := repo.Create(context.Background(), &entity.Purchase{
+		_, err := repo.Create(context.Background(), mockUOW, &entity.Purchase{
 			PurchaserID:      1,
 			PurchaseTypeName: "t-shirt",
 		})
@@ -188,4 +190,21 @@ func TestPurchasePostgresRepository_GetPurchasesByUserId(t *testing.T) {
 
 		assert.ErrorContains(t, err, "converting NULL to string")
 	})
+}
+
+type MockUnitOfWork struct {
+	uow.Executor
+	db *sql.DB
+}
+
+func (m *MockUnitOfWork) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return m.db.ExecContext(ctx, query, args...)
+}
+
+func (m *MockUnitOfWork) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return m.db.QueryContext(ctx, query, args...)
+}
+
+func (m *MockUnitOfWork) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return m.db.QueryRowContext(ctx, query, args...)
 }

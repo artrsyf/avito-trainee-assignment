@@ -18,7 +18,7 @@ func TestPurchaseUsecase_Integration(t *testing.T) {
 	userRepo := userRepo.NewUserPostgresRepository(DB, logrus.New())
 	purchaseRepo := purchaseRepo.NewPurchasePostgresRepository(DB, logrus.New())
 
-	uow := uow.NewSQLUnitOfWork(DB)
+	uow := uow.NewFactory(DB)
 
 	uc := usecase.NewPurchaseUsecase(purchaseRepo, userRepo, uow, logrus.New())
 	ctx := context.Background()

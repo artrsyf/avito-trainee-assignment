@@ -83,7 +83,7 @@ func (mr *MockUserRepositoryIMockRecorder) GetByUsername(ctx, username interface
 }
 
 // Update mocks base method.
-func (m *MockUserRepositoryI) Update(ctx context.Context, uow uow.UnitOfWorkI, user *model.User) error {
+func (m *MockUserRepositoryI) Update(ctx context.Context, uow uow.Executor, user *model.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", ctx, uow, user)
 	ret0, _ := ret[0].(error)

@@ -15,7 +15,7 @@ import (
 	userModel "github.com/artrsyf/avito-trainee-assignment/internal/user/domain/model"
 	mockUser "github.com/artrsyf/avito-trainee-assignment/internal/user/repository/mock_repository"
 	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
-	"github.com/artrsyf/avito-trainee-assignment/pkg/uow/mock_uow"
+	mockUow "github.com/artrsyf/avito-trainee-assignment/pkg/uow/mock_uow"
 )
 
 func TestPurchaseUsecase_Create(t *testing.T) {
@@ -24,9 +24,10 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 
 	mockPurchaseRepo := mockPurchase.NewMockPurchaseRepositoryI(ctrl)
 	mockUserRepo := mockUser.NewMockUserRepositoryI(ctrl)
-	mockUow := mock_uow.NewMockUnitOfWorkI(ctrl)
+	mockUowFactory := mockUow.NewMockFactory(ctrl)
+	mockUow := mockUow.NewMockUnitOfWork(ctrl)
 
-	uc := NewPurchaseUsecase(mockPurchaseRepo, mockUserRepo, mockUow, logrus.New())
+	uc := NewPurchaseUsecase(mockPurchaseRepo, mockUserRepo, mockUowFactory, logrus.New())
 
 	ctx := context.Background()
 	testRequest := &dto.PurchaseItemRequest{
@@ -42,21 +43,23 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("successful purchase", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
+		mockUowFactory.EXPECT().NewUnitOfWork().Return(mockUow)
+		mockUow.EXPECT().Begin(ctx).Return(nil)
+		mockUow.EXPECT().Commit().Return(nil)
+
 		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
-		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).DoAndReturn(
-			func(_ context.Context, _ uow.UnitOfWorkI, u *userModel.User) error {
+			func(_ context.Context, _ uow.UnitOfWork, u *userModel.User) error {
 				if u.Coins != 100 {
 					t.Error("user coins not updated correctly")
 				}
 				return nil
 			})
-		mockPurchaseRepo.EXPECT().Create(ctx, &entity.Purchase{
+		mockPurchaseRepo.EXPECT().Create(ctx, mockUow, &entity.Purchase{
 			PurchaserID:      1,
 			PurchaseTypeName: "premium",
 		}).Return(&purchaseModel.Purchase{ID: 1}, nil)
-		mockUow.EXPECT().Commit().Return(nil)
 
 		err := uc.Create(ctx, testRequest)
 		if err != nil {
@@ -100,9 +103,11 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("begin transaction error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
+		mockUowFactory.EXPECT().NewUnitOfWork().Return(mockUow)
+		mockUow.EXPECT().Begin(ctx).Return(errors.New("tx error"))
+
 		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
-		mockUow.EXPECT().Begin(ctx).Return(errors.New("tx error"))
 
 		err := uc.Create(ctx, testRequest)
 		if err == nil {
@@ -113,11 +118,13 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("user update error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
+		mockUowFactory.EXPECT().NewUnitOfWork().Return(mockUow)
+		mockUow.EXPECT().Begin(ctx).Return(nil)
+		mockUow.EXPECT().Rollback()
+
 		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
-		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(errors.New("update error"))
-		mockUow.EXPECT().Rollback()
 
 		err := uc.Create(ctx, testRequest)
 		if err == nil {
@@ -128,12 +135,14 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("purchase create error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
+		mockUowFactory.EXPECT().NewUnitOfWork().Return(mockUow)
+		mockUow.EXPECT().Begin(ctx).Return(nil)
+		mockUow.EXPECT().Rollback()
+
 		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
-		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(nil)
-		mockPurchaseRepo.EXPECT().Create(ctx, gomock.Any()).Return(nil, errors.New("create error"))
-		mockUow.EXPECT().Rollback()
+		mockPurchaseRepo.EXPECT().Create(ctx, mockUow, gomock.Any()).Return(nil, errors.New("create error"))
 
 		err := uc.Create(ctx, testRequest)
 		if err == nil {
@@ -144,12 +153,14 @@ func TestPurchaseUsecase_Create(t *testing.T) {
 	t.Run("commit error", func(t *testing.T) {
 		user := &userModel.User{ID: 1, Coins: 200}
 
+		mockUowFactory.EXPECT().NewUnitOfWork().Return(mockUow)
+		mockUow.EXPECT().Begin(ctx).Return(nil)
+		mockUow.EXPECT().Commit().Return(errors.New("commit error"))
+
 		mockUserRepo.EXPECT().GetByID(ctx, uint(1)).Return(user, nil)
 		mockPurchaseRepo.EXPECT().GetProductByType(ctx, "premium").Return(testPurchaseType, nil)
-		mockUow.EXPECT().Begin(ctx).Return(nil)
 		mockUserRepo.EXPECT().Update(ctx, mockUow, gomock.Any()).Return(nil)
-		mockPurchaseRepo.EXPECT().Create(ctx, gomock.Any()).Return(&purchaseModel.Purchase{ID: 1}, nil)
-		mockUow.EXPECT().Commit().Return(errors.New("commit error"))
+		mockPurchaseRepo.EXPECT().Create(ctx, mockUow, gomock.Any()).Return(&purchaseModel.Purchase{ID: 1}, nil)
 
 		err := uc.Create(ctx, testRequest)
 		if err == nil {

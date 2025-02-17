@@ -9,7 +9,7 @@ import (
 
 	purchaseRepo "github.com/artrsyf/avito-trainee-assignment/internal/purchase/repository"
 	userRepo "github.com/artrsyf/avito-trainee-assignment/internal/user/repository"
-	uowI "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
+	"github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 )
 
 type PurchaseUsecaseI interface {
@@ -19,20 +19,20 @@ type PurchaseUsecaseI interface {
 type PurchaseUsecase struct {
 	purchaseRepo purchaseRepo.PurchaseRepositoryI
 	userRepo     userRepo.UserRepositoryI
-	uow          uowI.UnitOfWorkI
+	uowFactory   uow.Factory
 	logger       *logrus.Logger
 }
 
 func NewPurchaseUsecase(
 	purchaseRepository purchaseRepo.PurchaseRepositoryI,
 	userRepository userRepo.UserRepositoryI,
-	uow uowI.UnitOfWorkI,
+	uowFactory uow.Factory,
 	logger *logrus.Logger,
 ) *PurchaseUsecase {
 	return &PurchaseUsecase{
 		purchaseRepo: purchaseRepository,
 		userRepo:     userRepository,
-		uow:          uow,
+		uowFactory:   uowFactory,
 		logger:       logger,
 	}
 }
@@ -62,15 +62,17 @@ func (uc *PurchaseUsecase) Create(
 
 	customerModel.Coins -= purchaseType.Cost
 
-	err = uc.uow.Begin(ctx)
+	uow := uc.uowFactory.NewUnitOfWork()
+
+	err = uow.Begin(ctx)
 	if err != nil {
 		uc.logger.WithError(err).Error("Transaction begin error")
 		return err
 	}
 
-	err = uc.userRepo.Update(ctx, uc.uow, customerModel)
+	err = uc.userRepo.Update(ctx, uow, customerModel)
 	if err != nil {
-		rbErr := uc.uow.Rollback()
+		rbErr := uow.Rollback()
 		if rbErr != nil {
 			uc.logger.WithError(rbErr).Error("Rollback error encountered")
 		}
@@ -78,9 +80,9 @@ func (uc *PurchaseUsecase) Create(
 		return err
 	}
 
-	purchaseModel, err := uc.purchaseRepo.Create(ctx, purchaseEntity)
+	purchaseModel, err := uc.purchaseRepo.Create(ctx, uow, purchaseEntity)
 	if err != nil {
-		rbErr := uc.uow.Rollback()
+		rbErr := uow.Rollback()
 		if rbErr != nil {
 			uc.logger.WithError(rbErr).Error("Rollback error encountered")
 		}
@@ -88,7 +90,7 @@ func (uc *PurchaseUsecase) Create(
 		return err
 	}
 
-	err = uc.uow.Commit()
+	err = uow.Commit()
 	if err != nil {
 		uc.logger.WithError(err).Error("Transaction commit error")
 		return err

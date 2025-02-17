@@ -9,34 +9,35 @@ import (
 	sql "database/sql"
 	reflect "reflect"
 
+	uow "github.com/artrsyf/avito-trainee-assignment/pkg/uow"
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockUnitOfWorkI is a mock of UnitOfWorkI interface.
-type MockUnitOfWorkI struct {
+// MockUnitOfWork is a mock of UnitOfWork interface.
+type MockUnitOfWork struct {
 	ctrl     *gomock.Controller
-	recorder *MockUnitOfWorkIMockRecorder
+	recorder *MockUnitOfWorkMockRecorder
 }
 
-// MockUnitOfWorkIMockRecorder is the mock recorder for MockUnitOfWorkI.
-type MockUnitOfWorkIMockRecorder struct {
-	mock *MockUnitOfWorkI
+// MockUnitOfWorkMockRecorder is the mock recorder for MockUnitOfWork.
+type MockUnitOfWorkMockRecorder struct {
+	mock *MockUnitOfWork
 }
 
-// NewMockUnitOfWorkI creates a new mock instance.
-func NewMockUnitOfWorkI(ctrl *gomock.Controller) *MockUnitOfWorkI {
-	mock := &MockUnitOfWorkI{ctrl: ctrl}
-	mock.recorder = &MockUnitOfWorkIMockRecorder{mock}
+// NewMockUnitOfWork creates a new mock instance.
+func NewMockUnitOfWork(ctrl *gomock.Controller) *MockUnitOfWork {
+	mock := &MockUnitOfWork{ctrl: ctrl}
+	mock.recorder = &MockUnitOfWorkMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockUnitOfWorkI) EXPECT() *MockUnitOfWorkIMockRecorder {
+func (m *MockUnitOfWork) EXPECT() *MockUnitOfWorkMockRecorder {
 	return m.recorder
 }
 
 // Begin mocks base method.
-func (m *MockUnitOfWorkI) Begin(ctx context.Context) error {
+func (m *MockUnitOfWork) Begin(ctx context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Begin", ctx)
 	ret0, _ := ret[0].(error)
@@ -44,13 +45,13 @@ func (m *MockUnitOfWorkI) Begin(ctx context.Context) error {
 }
 
 // Begin indicates an expected call of Begin.
-func (mr *MockUnitOfWorkIMockRecorder) Begin(ctx interface{}) *gomock.Call {
+func (mr *MockUnitOfWorkMockRecorder) Begin(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockUnitOfWorkI)(nil).Begin), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockUnitOfWork)(nil).Begin), ctx)
 }
 
 // Commit mocks base method.
-func (m *MockUnitOfWorkI) Commit() error {
+func (m *MockUnitOfWork) Commit() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Commit")
 	ret0, _ := ret[0].(error)
@@ -58,13 +59,13 @@ func (m *MockUnitOfWorkI) Commit() error {
 }
 
 // Commit indicates an expected call of Commit.
-func (mr *MockUnitOfWorkIMockRecorder) Commit() *gomock.Call {
+func (mr *MockUnitOfWorkMockRecorder) Commit() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockUnitOfWorkI)(nil).Commit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockUnitOfWork)(nil).Commit))
 }
 
 // Exec mocks base method.
-func (m *MockUnitOfWorkI) Exec(query string, args ...any) (sql.Result, error) {
+func (m *MockUnitOfWork) Exec(query string, args ...any) (sql.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{query}
 	for _, a := range args {
@@ -77,14 +78,14 @@ func (m *MockUnitOfWorkI) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 // Exec indicates an expected call of Exec.
-func (mr *MockUnitOfWorkIMockRecorder) Exec(query interface{}, args ...interface{}) *gomock.Call {
+func (mr *MockUnitOfWorkMockRecorder) Exec(query interface{}, args ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{query}, args...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockUnitOfWorkI)(nil).Exec), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockUnitOfWork)(nil).Exec), varargs...)
 }
 
 // ExecContext mocks base method.
-func (m *MockUnitOfWorkI) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+func (m *MockUnitOfWork) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, query}
 	for _, a := range args {
@@ -97,14 +98,33 @@ func (m *MockUnitOfWorkI) ExecContext(ctx context.Context, query string, args ..
 }
 
 // ExecContext indicates an expected call of ExecContext.
-func (mr *MockUnitOfWorkIMockRecorder) ExecContext(ctx, query interface{}, args ...interface{}) *gomock.Call {
+func (mr *MockUnitOfWorkMockRecorder) ExecContext(ctx, query interface{}, args ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, query}, args...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecContext", reflect.TypeOf((*MockUnitOfWorkI)(nil).ExecContext), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecContext", reflect.TypeOf((*MockUnitOfWork)(nil).ExecContext), varargs...)
+}
+
+// QueryRowContext mocks base method.
+func (m *MockUnitOfWork) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, query}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryRowContext", varargs...)
+	ret0, _ := ret[0].(*sql.Row)
+	return ret0
+}
+
+// QueryRowContext indicates an expected call of QueryRowContext.
+func (mr *MockUnitOfWorkMockRecorder) QueryRowContext(ctx, query interface{}, args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, query}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRowContext", reflect.TypeOf((*MockUnitOfWork)(nil).QueryRowContext), varargs...)
 }
 
 // Rollback mocks base method.
-func (m *MockUnitOfWorkI) Rollback() error {
+func (m *MockUnitOfWork) Rollback() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Rollback")
 	ret0, _ := ret[0].(error)
@@ -112,7 +132,126 @@ func (m *MockUnitOfWorkI) Rollback() error {
 }
 
 // Rollback indicates an expected call of Rollback.
-func (mr *MockUnitOfWorkIMockRecorder) Rollback() *gomock.Call {
+func (mr *MockUnitOfWorkMockRecorder) Rollback() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockUnitOfWorkI)(nil).Rollback))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rollback", reflect.TypeOf((*MockUnitOfWork)(nil).Rollback))
+}
+
+// MockExecutor is a mock of Executor interface.
+type MockExecutor struct {
+	ctrl     *gomock.Controller
+	recorder *MockExecutorMockRecorder
+}
+
+// MockExecutorMockRecorder is the mock recorder for MockExecutor.
+type MockExecutorMockRecorder struct {
+	mock *MockExecutor
+}
+
+// NewMockExecutor creates a new mock instance.
+func NewMockExecutor(ctrl *gomock.Controller) *MockExecutor {
+	mock := &MockExecutor{ctrl: ctrl}
+	mock.recorder = &MockExecutorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockExecutor) EXPECT() *MockExecutorMockRecorder {
+	return m.recorder
+}
+
+// Exec mocks base method.
+func (m *MockExecutor) Exec(query string, args ...any) (sql.Result, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{query}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Exec", varargs...)
+	ret0, _ := ret[0].(sql.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exec indicates an expected call of Exec.
+func (mr *MockExecutorMockRecorder) Exec(query interface{}, args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{query}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockExecutor)(nil).Exec), varargs...)
+}
+
+// ExecContext mocks base method.
+func (m *MockExecutor) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, query}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ExecContext", varargs...)
+	ret0, _ := ret[0].(sql.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExecContext indicates an expected call of ExecContext.
+func (mr *MockExecutorMockRecorder) ExecContext(ctx, query interface{}, args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, query}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecContext", reflect.TypeOf((*MockExecutor)(nil).ExecContext), varargs...)
+}
+
+// QueryRowContext mocks base method.
+func (m *MockExecutor) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, query}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryRowContext", varargs...)
+	ret0, _ := ret[0].(*sql.Row)
+	return ret0
+}
+
+// QueryRowContext indicates an expected call of QueryRowContext.
+func (mr *MockExecutorMockRecorder) QueryRowContext(ctx, query interface{}, args ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, query}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryRowContext", reflect.TypeOf((*MockExecutor)(nil).QueryRowContext), varargs...)
+}
+
+// MockFactory is a mock of Factory interface.
+type MockFactory struct {
+	ctrl     *gomock.Controller
+	recorder *MockFactoryMockRecorder
+}
+
+// MockFactoryMockRecorder is the mock recorder for MockFactory.
+type MockFactoryMockRecorder struct {
+	mock *MockFactory
+}
+
+// NewMockFactory creates a new mock instance.
+func NewMockFactory(ctrl *gomock.Controller) *MockFactory {
+	mock := &MockFactory{ctrl: ctrl}
+	mock.recorder = &MockFactoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
+	return m.recorder
+}
+
+// NewUnitOfWork mocks base method.
+func (m *MockFactory) NewUnitOfWork() uow.UnitOfWork {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewUnitOfWork")
+	ret0, _ := ret[0].(uow.UnitOfWork)
+	return ret0
+}
+
+// NewUnitOfWork indicates an expected call of NewUnitOfWork.
+func (mr *MockFactoryMockRecorder) NewUnitOfWork() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewUnitOfWork", reflect.TypeOf((*MockFactory)(nil).NewUnitOfWork))
 }
