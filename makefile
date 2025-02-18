@@ -41,8 +41,8 @@ e2e_test:
 load_test:
 	docker-compose -f $(COMPOSE_DEV_FILE) up --build -d
 	docker run -i --network=host \
-		-v C:\projects\avito-trainee-assignment\tests\load:/app \
-		loadimpact/k6 run /app/stress_test.js \
+		-v "$(CURDIR)/tests/load:/app" \
+		grafana/k6 run /app/stress_test.js \
 		-e API_URL=http://host.docker.internal:8080
 	docker-compose -f $(COMPOSE_DEV_FILE) down --volumes --remove-orphans
 
